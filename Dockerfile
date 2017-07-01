@@ -20,7 +20,7 @@ RUN apt-get update && apt-get -y install  unzip \
                         p7zip-full
 
 # https://www.kernel.org/
-ENV KERNEL_VERSION  4.4.61
+ENV KERNEL_VERSION  4.4.74
 
 # Fetch the kernel sources
 RUN curl --retry 10 https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.*}.x/linux-$KERNEL_VERSION.tar.xz | tar -C / -xJ && \
@@ -29,7 +29,7 @@ RUN curl --retry 10 https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.
 # http://aufs.sourceforge.net/
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
 ENV AUFS_BRANCH     aufs4.4
-ENV AUFS_COMMIT     ceb76738a8d832d99487de22ae73f1297e9d61cc
+ENV AUFS_COMMIT     dcfa30307f2a165069545a0ad2094ca31fcb490b
 # we use AUFS_COMMIT to get stronger repeatability guarantees
 
 # Download AUFS and apply patches and files, then remove it
@@ -168,9 +168,9 @@ RUN curl -fL -o $ROOTFS/usr/local/bin/generate_cert https://github.com/SvenDowid
 
 # Build VBox guest additions
 #   http://download.virtualbox.org/virtualbox/
-ENV VBOX_VERSION 5.1.18
+ENV VBOX_VERSION 5.1.22
 #   https://www.virtualbox.org/download/hashes/$VBOX_VERSION/SHA256SUMS
-ENV VBOX_SHA256 f2951b49f48a560fbc1afe9d135d1f3f82a3e158b9002278d05d978428adca8a
+ENV VBOX_SHA256 54df14f234b6aa484b94939ab0f435b5dd859417612b65a399ecc34a62060380
 #   (VBoxGuestAdditions_X.Y.Z.iso SHA256, for verification)
 RUN set -x && \
     \
