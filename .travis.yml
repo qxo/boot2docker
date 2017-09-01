@@ -1,15 +1,56 @@
 language: bash
-
 sudo: required
-services:
-  - docker
 
+cache:
+  bundler: true
+  directories:
+#  - $HOME/.ivy2/cache
+#  - $HOME/.m2
+#  - $HOME/.sbt/boot/
+  - $HOME/docker
+before_cache:
+#- mkdir -p $HOME/docker && docker images -a --filter='dangling=false' --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep -v none | xargs -n 2 -t sh -c 'test -e $HOME/docker/$1.tar.gz || docker save $0 | gzip -2 > $HOME/docker/$1.tar.gz'
+- mkdir -p $HOME/docker && docker images   --filter='dangling=false' --format '{{.Repository}}:{{.Tag}}' | grep boot2docker | xargs -n 1 -I {x} -t sh -c 'docker save {x} | gzip -2 > $HOME/docker/$(echo {x} | md5sum | awk "{print \$1}" ).tar.gz'
+- bash -c " ls -lA $HOME/docker/ "
+before_install:
+# Load cached docker images
+#- mkdir -p  $HOME/docker && docker pull busybox && docker images busybox  --filter='dangling=false' --format '{{.Repository}}:{{.Tag}}' | grep -v none | xargs -n 1 -I {x} -t sh -c 'docker save {x} | gzip -2 > $HOME/docker/$(echo {x} | md5sum | awk "{print \$1}" ).tar.gz'  
+#- bash -c "docker images -a --filter='dangling=false' && ls -l  $HOME/docker/" 
+#- exit 1
+- if [[ -d $HOME/docker ]]; then bash -c " ls -lA $HOME/docker/ " ;rm -f $HOME/docker/.tar.gz ; ls $HOME/docker/*.tar.gz | xargs -I {file} sh -c "zcat {file} | docker load"; echo ok ; fi
+- bash -c "docker images -a --filter='dangling=false'"
+
+services:
+- docker
 script:
-  - docker build -t boot2docker/boot2docker .
-  - docker run --rm boot2docker/boot2docker > boot2docker.iso
+#- docker pull busybox
+#- docker save busybox  > ${TRAVIS_BUILD_DIR}/boot2docker.iso
+#- if [[ -e ~/docker/boot2docker.tar ]]; then docker load -i ~/docker/boot2docker.tar; fi
+- docker build --rm --cache-from boot2docker/boot2docker  -t boot2docker/boot2docker .
+#- mkdir -p ~/docker; docker save boot2docker/boot2docker > ~/docker/boot2docker.tar
+- docker run --rm boot2docker/boot2docker > ${TRAVIS_BUILD_DIR}/boot2docker.iso
+- export ARTIFACT_VERSION=$(cat VERSION) &&  export ARTIFACT_DATE=$(date +%Y-%m-%d) && cp bintary_desc.json.tpl ${TRAVIS_BUILD_DIR}/bintary_desc.json && sed -i "s#ARTIFACT_VERSION#${ARTIFACT_VERSION}#g" ${TRAVIS_BUILD_DIR}/bintary_desc.json && sed -i "s#ARTIFACT_DATE#${ARTIFACT_DATE}#g" ${TRAVIS_BUILD_DIR}/bintary_desc.json &&sed -i "s#TARGET_DIR#${TRAVIS_BUILD_DIR}#g" ${TRAVIS_BUILD_DIR}/bintary_desc.json 
+- bash -c "docker images -a --filter='dangling=false'"
 
 after_script:
-  - docker images
-  - ls -l *.iso
+- bash -c "docker images -a --filter='dangling=false'"
+- ls -l ${TRAVIS_BUILD_DIR}/ && echo "${TRAVIS_BUILD_DIR}"
+deploy:
+- provider: releases
+  api_key: ${github_api_key}
+  file: boot2docker.iso
+  skip_cleanup: true
+  dry-run: true
+  on:
+    tags: true
 
-# vim:set et ts=2 sw=2:
+#https://github.com/bintray/bintray-examples/blob/master/travis-ci-example
+#https://docs.travis-ci.com/user/deployment/bintray/
+- provider: bintray
+  file: "${TRAVIS_BUILD_DIR}/bintary_desc.json"
+  user: "${bintray_user}"
+  key: ${bintray_key}
+#  passphrase: "Optional. In case a passphrase is configured on Bintray ddand GPG signing is used"
+#  dry-run: ${bintray_dry_run}
+  on:
+    tags: true
