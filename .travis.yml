@@ -10,14 +10,15 @@ cache:
   - $HOME/docker
 before_cache:
 #- mkdir -p $HOME/docker && docker images -a --filter='dangling=false' --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep -v none | xargs -n 2 -t sh -c 'test -e $HOME/docker/$1.tar.gz || docker save $0 | gzip -2 > $HOME/docker/$1.tar.gz'
-- test ! "${NOT_CACHE_IMG_AFTER_BUILD}" = "true" &&  mkdir -p $HOME/docker && docker images   --filter='dangling=false' --format '{{.Repository}}:{{.Tag}}' | grep boot2docker | xargs -n 1 -I {x} -t sh -c 'docker save {x} | gzip -2 > $HOME/docker/$(echo {x} | md5sum | awk "{print \$1}" ).tar.gz'
+- test ! "${NOT_CACHE_IMG_AFTER_BUILD}" = "true" &&  mkdir -p $HOME/docker && docker images   --filter='dangling=false' --format '{{.Repository}}:{{.Tag}}' | grep boot2docker | xargs -n 1 -I {x} -t sh -c 'docker save {x} | gzip -2 > $HOME/docker/$(echo {x} | md5sum | awk "{print \$1}" ).tar.gz' &&  docker images   --filter='dangling=false' --format '{{.Repository}}:{{.Tag}}  {{.ID}}' debian > $HOME/docker/debian.image.id.txt  | echo ok 
 - bash -c " ls -lA $HOME/docker/ "
 before_install:
 # Load cached docker images
 #- mkdir -p  $HOME/docker && docker pull busybox && docker images busybox  --filter='dangling=false' --format '{{.Repository}}:{{.Tag}}' | grep -v none | xargs -n 1 -I {x} -t sh -c 'docker save {x} | gzip -2 > $HOME/docker/$(echo {x} | md5sum | awk "{print \$1}" ).tar.gz'  
 #- bash -c "docker images -a --filter='dangling=false' && ls -l  $HOME/docker/" 
 #- exit 1
-- if [[ -d $HOME/docker ]]; then bash -c " ls -lA $HOME/docker/ " ;rm -f $HOME/docker/.tar.gz ; ls $HOME/docker/*.tar.gz | xargs -I {file} sh -c "zcat {file} | docker load"; echo ok ; fi
+- test ! "${NOT_LOAD_CACHE_BEFORE_BUILD}" = "true"  && if [[ -d $HOME/docker ]]; then bash -c " ls -lA $HOME/docker/ " ;rm -f $HOME/docker/.tar.gz ; ls $HOME/docker/*.tar.gz | xargs -t -I {file} sh -c "zcat {file} | docker load"; fi  | echo ok 
+- test ! "${NOT_LOAD_CACHE_BEFORE_BUILD}" = "true"  &&  if [[ -f "$HOME/docker/debian.image.id.txt"  ]] ; then bash -c "cat $HOME/docker/debian.image.id.txt "; cat $HOME/docker/debian.image.id.txt | xargs  sh -c 'docker tag $1 $0'; fi  | echo ok 
 - bash -c "docker images -a --filter='dangling=false'"
 
 services:
