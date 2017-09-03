@@ -10,7 +10,7 @@ cache:
   - $HOME/docker
 before_cache:
 #- mkdir -p $HOME/docker && docker images -a --filter='dangling=false' --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep -v none | xargs -n 2 -t sh -c 'test -e $HOME/docker/$1.tar.gz || docker save $0 | gzip -2 > $HOME/docker/$1.tar.gz'
-- mkdir -p $HOME/docker && docker images   --filter='dangling=false' --format '{{.Repository}}:{{.Tag}}' | grep boot2docker | xargs -n 1 -I {x} -t sh -c 'docker save {x} | gzip -2 > $HOME/docker/$(echo {x} | md5sum | awk "{print \$1}" ).tar.gz'
+- test ! "${NOT_CACHE_IMG_AFTER_BUILD}" = "true" &&  mkdir -p $HOME/docker && docker images   --filter='dangling=false' --format '{{.Repository}}:{{.Tag}}' | grep boot2docker | xargs -n 1 -I {x} -t sh -c 'docker save {x} | gzip -2 > $HOME/docker/$(echo {x} | md5sum | awk "{print \$1}" ).tar.gz'
 - bash -c " ls -lA $HOME/docker/ "
 before_install:
 # Load cached docker images
