@@ -21,6 +21,8 @@ RUN set -eux; \
 		unzip \
 		xorriso \
 		xz-utils \
+		libelf-dev \
+		libssl-dev \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
@@ -33,8 +35,8 @@ RUN curl --retry 10 https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.
 
 # http://aufs.sourceforge.net/
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
-ENV AUFS_BRANCH     aufs4.4
-ENV AUFS_COMMIT     7b00655846641e84c87f9af94985f48e4bb0f2df
+ENV AUFS_BRANCH     aufs4.x-rcN
+ENV AUFS_COMMIT     8b9c1be851f351af1104f55952e211ae541695ee
 # we use AUFS_COMMIT to get stronger repeatability guarantees
 
 # Download AUFS and apply patches and files, then remove it
