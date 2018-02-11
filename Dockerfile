@@ -21,11 +21,13 @@ RUN set -eux; \
 		unzip \
 		xorriso \
 		xz-utils \
+		libelf-dev \
+		libssl-dev \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
 # https://www.kernel.org/
-ENV KERNEL_VERSION  4.4.115
+ENV KERNEL_VERSION  4.15
 
 # Fetch the kernel sources
 RUN curl --retry 10 https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.*}.x/linux-$KERNEL_VERSION.tar.xz | tar -C / -xJ && \
@@ -33,8 +35,8 @@ RUN curl --retry 10 https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.
 
 # http://aufs.sourceforge.net/
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
-ENV AUFS_BRANCH     aufs4.4
-ENV AUFS_COMMIT     7b00655846641e84c87f9af94985f48e4bb0f2df
+ENV AUFS_BRANCH     aufs4.x-rcN
+ENV AUFS_COMMIT     8b9c1be851f351af1104f55952e211ae541695ee
 # we use AUFS_COMMIT to get stronger repeatability guarantees
 
 # Download AUFS and apply patches and files, then remove it
@@ -75,7 +77,7 @@ RUN mkdir -p /tmp/iso/boot
 
 # Install the kernel modules in $ROOTFS
 RUN cd /linux-kernel && \
-    make INSTALL_MOD_PATH=$ROOTFS modules_install firmware_install
+    make INSTALL_MOD_PATH=$ROOTFS modules_install
 
 # Remove useless kernel modules, based on unclejack/debian2docker
 RUN cd $ROOTFS/lib/modules && \
@@ -103,8 +105,8 @@ RUN curl -fL http://http.debian.net/debian/pool/main/libc/libcap2/libcap2_2.22.o
 
 # Make sure the kernel headers are installed for aufs-util, and then build it
 ENV AUFS_UTIL_REPO    git://git.code.sf.net/p/aufs/aufs-util
-ENV AUFS_UTIL_BRANCH  aufs4.4
-ENV AUFS_UTIL_COMMIT  9702d49c9d1b5daac9b21e440c3e2b96d37916d6
+ENV AUFS_UTIL_BRANCH  aufs4.x-rcN
+ENV AUFS_UTIL_COMMIT  e6e29dd6efaaeabb0175d8faec153f1770987c20
 RUN set -ex \
 	&& git clone -b "$AUFS_UTIL_BRANCH" "$AUFS_UTIL_REPO" /aufs-util \
 	&& git -C /aufs-util checkout --quiet "$AUFS_UTIL_COMMIT" \
@@ -181,9 +183,9 @@ RUN curl -fL -o $ROOTFS/usr/local/bin/generate_cert https://github.com/SvenDowid
 
 # Build VBox guest additions
 #   http://download.virtualbox.org/virtualbox/
-ENV VBOX_VERSION 5.2.2
+ENV VBOX_VERSION 5.2.6
 #   https://www.virtualbox.org/download/hashes/$VBOX_VERSION/SHA256SUMS
-ENV VBOX_SHA256 8317a0479a94877829b20a19df8a7c09187b31eecb3f1ed9d2b8cb8681a81bb8
+ENV VBOX_SHA256 c5ff76a50504e8be1f6c6f3202c78f9cd07e7023b9684bec3cce9d4dcd95a9df
 #   (VBoxGuestAdditions_X.Y.Z.iso SHA256, for verification)
 RUN set -x && \
     \
@@ -196,13 +198,16 @@ RUN set -x && \
     rm vboxguest.iso && \
     \
     sh VBoxLinuxAdditions.run --noexec --target . && \
-    mkdir amd64 && tar -C amd64 -xjf VBoxGuestAdditions-amd64.tar.bz2 && \
+    mkdir -p amd64 && tar -C amd64 -xjf VBoxGuestAdditions-amd64.tar.bz2 && \
     rm VBoxGuestAdditions*.tar.bz2 && \
-    \
+     curl -fL -o ./t.patch "https://raw.githubusercontent.com/mjmaravillo/misc/master/linux-4.15.0-rc8-VBoxGuestAdditions-amd64.diff" && \
+	cat ./t.patch && \
+	patch -p1 -d amd64 <  ./t.patch && \
     make -C amd64/src/vboxguest-${VBOX_VERSION} \
         KERN_DIR=/linux-kernel \
         KERN_VER="$KERNEL_VERSION" \
     && \
+	mkdir -p $ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker && \
     cp amd64/src/vboxguest-${VBOX_VERSION}/*.ko $ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/ && \
     \
     mkdir -p $ROOTFS/sbin && \
@@ -233,9 +238,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Build VMware Tools
-ENV OVT_VERSION 10.0.0-3000743
+ENV OVT_VERSION 10.2.0-7253323
 
-RUN curl --retry 10 -fsSL "https://github.com/vmware/open-vm-tools/archive/open-vm-tools-${OVT_VERSION}.tar.gz" | tar -xz --strip-components=1 -C /
+RUN mkdir -p /open-vm-tools && \
+ curl --retry 10 -fsSL "https://github.com/vmware/open-vm-tools/releases/download/stable-$( echo $OVT_VERSION | awk -F'-' '{print $1}')/open-vm-tools-${OVT_VERSION}.tar.gz" | tar -xz --strip-components=1 -C /open-vm-tools
 
 # Compile user space components, we're no longer building kernel module as we're
 # now bundling FUSE shared folders support.
@@ -270,29 +276,6 @@ RUN ln -sT libtirpc.so "$ROOTFS/usr/local/lib/libtirpc.so.1" \
 RUN LD_LIBRARY_PATH='/lib:/usr/local/lib' \
 		chroot "$ROOTFS" vmhgfs-fuse --version
 
-# Download and build Parallels Tools
-ENV PRL_MAJOR 12
-ENV PRL_VERSION 12.1.3-41532
-
-RUN set -ex \
-	&& mkdir -p /prl_tools \
-	&& curl -fSL "http://download.parallels.com/desktop/v${PRL_MAJOR}/${PRL_VERSION}/ParallelsTools-${PRL_VERSION}-boot2docker.tar.gz" \
-		| tar -xzC /prl_tools --strip-components 1 \
-	&& cd /prl_tools \
-	&& cp -Rv tools/* $ROOTFS \
-	\
-	# Kludge to fix fsync on directory in prl_fs:
-	#   https://github.com/Parallels/docker-machine-parallels/issues/71
-	# Should be removed when fixed in official Parallels Tools.
-	&& sed -E -i 's/(^\t.llseek\t\t= generic_file_llseek,$)/\1\n\t.fsync = noop_fsync,/' \
-		kmods/prl_fs/SharedFolders/Guest/Linux/prl_fs/file.c \
-	&& KERNEL_DIR=/linux-kernel/ KVER="$KERNEL_VERSION" SRC=/linux-kernel/ PRL_FREEZE_SKIP=1 \
-		make -C kmods/ -f Makefile.kmods installme \
-	\
-	&& find kmods/ -name '*.ko' -exec cp {} "$ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/" ';'
-
-# verify that all the above actually worked (at least producing a valid binary, so we don't repeat issue #1157)
-RUN chroot "$ROOTFS" prltoolsd -V
 
 # Build XenServer Tools
 ENV XEN_REPO https://github.com/xenserver/xe-guest-utilities
@@ -314,8 +297,10 @@ RUN set -ex \
 	&& cp hv_kvp_daemon $ROOTFS/usr/sbin \
 	&& rm -rf /tmp/kheaders
 
+
 # Make sure that all the modules we might have added are recognized (especially VBox guest additions)
 RUN depmod -a -b "$ROOTFS" "$KERNEL_VERSION-boot2docker"
+
 
 COPY VERSION $ROOTFS/etc/version
 RUN cp -v "$ROOTFS/etc/version" /tmp/iso/version
