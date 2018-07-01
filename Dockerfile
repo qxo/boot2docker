@@ -21,8 +21,7 @@ RUN set -eux; \
 		unzip \
 		xorriso \
 		xz-utils \
-		libelf-dev \
-		libssl-dev \
+		bison flex libelf-dev \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
@@ -30,7 +29,7 @@ RUN set -eux; \
 ENV KERNEL_VERSION  4.17.3
 
 # Fetch the kernel sources
-RUN curl --retry 10 https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.*}.x/linux-$KERNEL_VERSION.tar.xz | tar -C / -xJ && \
+RUN curl -fL --retry 10 "https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.*}.x/linux-$KERNEL_VERSION.tar.xz" | tar -C / -xJ && \
     mv /linux-$KERNEL_VERSION /linux-kernel
 
 # http://aufs.sourceforge.net/
@@ -61,7 +60,7 @@ COPY kernel_config /linux-kernel/.config
 
 RUN jobs=$(nproc); \
     cd /linux-kernel && \
-    make -j ${jobs} oldconfig && \
+    make -j ${jobs} olddefconfig && \
     make -j ${jobs} bzImage && \
     make -j ${jobs} modules
 
@@ -106,10 +105,11 @@ RUN curl -fL http://http.debian.net/debian/pool/main/libc/libcap2/libcap2_2.22.o
 # Make sure the kernel headers are installed for aufs-util, and then build it
 ENV AUFS_UTIL_REPO    git://git.code.sf.net/p/aufs/aufs-util
 ENV AUFS_UTIL_BRANCH  aufs4.x-rcN
-ENV AUFS_UTIL_COMMIT  e6e29dd6efaaeabb0175d8faec153f1770987c20
+ENV AUFS_UTIL_COMMIT  893a1330855d310b05936e22634f2d6318d00a36
 RUN set -ex \
 	&& git clone -b "$AUFS_UTIL_BRANCH" "$AUFS_UTIL_REPO" /aufs-util \
 	&& git -C /aufs-util checkout --quiet "$AUFS_UTIL_COMMIT" \
+	&& sed -i 's#return -1;#return 0;#g' /aufs-util/ver.c \
 	&& make -C /linux-kernel headers_install INSTALL_HDR_PATH=/tmp/kheaders \
 	&& export CFLAGS='-I/tmp/kheaders/include' \
 	&& export CPPFLAGS="$CFLAGS" LDFLAGS="$CFLAGS" \
@@ -183,9 +183,9 @@ RUN curl -fL -o $ROOTFS/usr/local/bin/generate_cert https://github.com/SvenDowid
 
 # Build VBox guest additions
 #   http://download.virtualbox.org/virtualbox/
-ENV VBOX_VERSION 5.2.6
+ENV VBOX_VERSION 5.2.14
 #   https://www.virtualbox.org/download/hashes/$VBOX_VERSION/SHA256SUMS
-ENV VBOX_SHA256 c5ff76a50504e8be1f6c6f3202c78f9cd07e7023b9684bec3cce9d4dcd95a9df
+ENV VBOX_SHA256 e149ff0876242204fe924763f9272f691242d6a6ad4538a128fb7dba770781de
 #   (VBoxGuestAdditions_X.Y.Z.iso SHA256, for verification)
 RUN set -x && \
     \
@@ -198,16 +198,13 @@ RUN set -x && \
     rm vboxguest.iso && \
     \
     sh VBoxLinuxAdditions.run --noexec --target . && \
-    mkdir -p amd64 && tar -C amd64 -xjf VBoxGuestAdditions-amd64.tar.bz2 && \
+    mkdir amd64 && tar -C amd64 -xjf VBoxGuestAdditions-amd64.tar.bz2 && \
     rm VBoxGuestAdditions*.tar.bz2 && \
-     curl -fL -o ./t.patch "https://raw.githubusercontent.com/mjmaravillo/misc/master/linux-4.15.0-rc8-VBoxGuestAdditions-amd64.diff" && \
-	cat ./t.patch && \
-	patch -p1 -d amd64 <  ./t.patch && \
+    \
     make -C amd64/src/vboxguest-${VBOX_VERSION} \
         KERN_DIR=/linux-kernel \
         KERN_VER="$KERNEL_VERSION" \
     && \
-	mkdir -p $ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker && \
     cp amd64/src/vboxguest-${VBOX_VERSION}/*.ko $ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/ && \
     \
     mkdir -p $ROOTFS/sbin && \
@@ -235,6 +232,7 @@ RUN apt-get update && apt-get install -y \
         libtirpc-dev \
         libtirpc1 \
         libtool \
+    && apt-get install --reinstall bison libbison-dev flex libfl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Build VMware Tools
