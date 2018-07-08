@@ -26,17 +26,16 @@ RUN set -eux; \
 	rm -rf /var/lib/apt/lists/*
 
 # https://www.kernel.org/
-ENV KERNEL_VERSION  4.14.53
+ENV KERNEL_VERSION  4.17.3
 
 # Fetch the kernel sources
 RUN curl -fL --retry 10 "https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.*}.x/linux-$KERNEL_VERSION.tar.xz" | tar -C / -xJ && \
     mv /linux-$KERNEL_VERSION /linux-kernel
 
-
 # http://aufs.sourceforge.net/
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
-ENV AUFS_BRANCH     aufs4.14
-ENV AUFS_COMMIT     a0ff7f363fc8d0abd7cf62f73a854cbfc6f3bc8b
+ENV AUFS_BRANCH     aufs4.17
+ENV AUFS_COMMIT     347f3498aa3ad0a7e272c9032f375e5444edb37f
 # we use AUFS_COMMIT to get stronger repeatability guarantees
 
 # Download AUFS and apply patches and files, then remove it
@@ -212,6 +211,7 @@ RUN set -x && \
     cp amd64/other/mount.vboxsf amd64/sbin/VBoxService $ROOTFS/sbin/ && \
     mkdir -p $ROOTFS/bin && \
     cp amd64/bin/VBoxClient amd64/bin/VBoxControl $ROOTFS/bin/
+
 # TODO figure out how to make this work reasonably (these tools try to read /proc/self/exe at startup, even for a simple "--version" check)
 ## verify that all the above actually worked (at least producing a valid binary, so we don't repeat issue #1157)
 #RUN set -x && \
@@ -235,7 +235,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Build VMware Tools
-ENV OVT_VERSION 10.2.5-8068406
+ENV OVT_VERSION 10.2.0-7253323
 
 RUN mkdir -p /open-vm-tools && \
  curl --retry 10 -fsSL "https://github.com/vmware/open-vm-tools/releases/download/stable-$( echo $OVT_VERSION | awk -F'-' '{print $1}')/open-vm-tools-${OVT_VERSION}.tar.gz" | tar -xz --strip-components=1 -C /open-vm-tools
@@ -251,7 +251,6 @@ RUN cd /open-vm-tools && \
     make LIBS="-ltirpc" CFLAGS="-Wno-implicit-function-declaration" && \
     make DESTDIR=$ROOTFS install &&\
     /open-vm-tools/libtool --finish $ROOTFS/usr/local/lib
-
 
 # Building the Libdnet library for VMware Tools.
 ENV LIBDNET libdnet-1.12
