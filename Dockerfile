@@ -379,10 +379,41 @@ RUN make -C /usr/src/vbox/amd64/src/vboxguest -j "$(nproc)" \
 	cp -v /usr/src/vbox/amd64/other/mount.vboxsf /usr/src/vbox/amd64/sbin/VBoxService sbin/; \
 	cp -v /usr/src/vbox/amd64/bin/VBoxControl bin/
 
-# TCL includes VMware's open-vm-tools 10.2.0.1608+ (no reason to compile that ourselves)
-RUN tcl-tce-load open-vm-tools; \
-	tcl-chroot vmhgfs-fuse --version; \
-	tcl-chroot vmtoolsd --version
+
+	# Install build dependencies for VMware Tools
+RUN apt-get update && apt-get install -y \
+        autoconf \
+        libdumbnet-dev \
+        libdumbnet1 \
+        libfuse-dev \
+        libfuse2 \
+        libglib2.0-0 \
+        libglib2.0-dev \
+        libmspack-dev \
+        libssl-dev \
+        libtirpc-dev \
+        libtirpc1 \
+        libtool \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build VMware Tools
+ENV OVT_VERSION 10.3.5-10430147
+
+RUN mkdir -p /open-vm-tools && \
+ curl --retry 10 -fsSL "https://github.com/vmware/open-vm-tools/releases/download/stable-$( echo $OVT_VERSION | awk -F'-' '{print $1}')/open-vm-tools-${OVT_VERSION}.tar.gz" | tar -xz --strip-components=1 -C /open-vm-tools
+
+# Compile user space components, we're no longer building kernel module as we're
+# now bundling FUSE shared folders support.
+RUN cd /open-vm-tools && \
+    autoreconf -i && \
+    ./configure --disable-multimon --disable-docs --disable-tests --with-gnu-ld \
+                --without-kernel-modules --without-procps --without-gtk2 \
+                --without-gtkmm --without-pam --without-x --without-icu \
+                --without-xerces --without-xmlsecurity --without-ssl && \
+    make LIBS="-ltirpc" CFLAGS="-Wno-implicit-function-declaration" && \
+    make DESTDIR=$ROOTFS install &&\
+    /open-vm-tools/libtool --finish $ROOTFS/usr/local/lib
+	
 
 ENV PARALLELS_VERSION 13.3.0-43321
 
@@ -427,7 +458,7 @@ RUN wget -O usr/local/sbin/cgroupfs-mount "https://github.com/tianon/cgroupfs-mo
 	chmod +x usr/local/sbin/cgroupfs-mount; \
 	tcl-chroot cgroupfs-mount
 
-ENV DOCKER_VERSION 18.09.0-rc1
+ENV DOCKER_VERSION 18.09.0
 
 # Get the Docker binaries with version that matches our boot2docker version.
 RUN DOCKER_CHANNEL='edge'; \
