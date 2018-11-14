@@ -394,6 +394,7 @@ RUN apt-get update && apt-get install -y \
         libtirpc-dev \
         libtirpc1 \
         libtool \
+        curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Build VMware Tools
@@ -404,7 +405,7 @@ RUN mkdir -p /open-vm-tools && \
 
 # Compile user space components, we're no longer building kernel module as we're
 # now bundling FUSE shared folders support.
-RUN cd /open-vm-tools && \
+RUN ROOTFS=/usr/src/linux && cd /open-vm-tools && \
     autoreconf -i && \
     ./configure --disable-multimon --disable-docs --disable-tests --with-gnu-ld \
                 --without-kernel-modules --without-procps --without-gtk2 \
@@ -413,9 +414,9 @@ RUN cd /open-vm-tools && \
     make LIBS="-ltirpc" CFLAGS="-Wno-implicit-function-declaration" && \
     make DESTDIR=$ROOTFS install &&\
     /open-vm-tools/libtool --finish $ROOTFS/usr/local/lib
-	
 
-ENV PARALLELS_VERSION 13.3.0-43321
+
+ENV PARALLELS_VERSION 13.3.2-43368
 
 RUN wget -O /parallels.tgz "https://download.parallels.com/desktop/v${PARALLELS_VERSION%%.*}/$PARALLELS_VERSION/ParallelsTools-$PARALLELS_VERSION-boot2docker.tar.gz"; \
 	mkdir /usr/src/parallels; \
