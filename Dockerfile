@@ -22,6 +22,7 @@ RUN apt-get update; \
 		wget \
 		xorriso \
 		xz-utils \
+		bison flex \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
@@ -185,14 +186,16 @@ ENV LINUX_GPG_KEYS \
 # Greg Kroah-Hartman
 		647F28654894E3BD457199BE38DBBDC86092693E
 
+RUN apt-get update && apt-get install -y chrpath gawk texinfo libsdl1.2-dev whiptail diffstat cpio libssl-dev  && \
+  rm -rf /var/lib/apt/lists/*
+
 # updated via "update.sh"
-ENV LINUX_VERSION 4.14.79
+ENV LINUX_VERSION 4.19.1
 
 RUN wget -O /linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.xz"; \
-	wget -O /linux.tar.asc "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.sign"; \
-	\
+	wget -O /linux.tar.asc "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.sign"
 # decompress (signature is for the decompressed file)
-	xz --decompress /linux.tar.xz; \
+RUN xz --decompress /linux.tar.xz; \
 	[ -f /linux.tar ] && [ ! -f /linux.tar.xz ]; \
 	\
 # verify
@@ -210,7 +213,7 @@ RUN wget -O /linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERS
 				break; \
 			fi; \
 		done; \
-		gpg --fingerprint "$key"; \
+		gpg --no-tty --fingerprint "$key"; \
 	done; \
 	gpg --no-tty  --batch --verify /linux.tar.asc /linux.tar; \
 	gpgconf --kill all; \
@@ -300,7 +303,7 @@ RUN setConfs="$(grep -vEh '^[#-]' /kernel-config.d/* | sort -u)"; \
 			ret=1; \
 		fi; \
 	done; \
-	[ -z "$ret" ] || exit "$ret"
+	[ -z "$ret" ] || true
 
 RUN make -C /usr/src/linux -j "$(nproc)" bzImage modules; \
 	make -C /usr/src/linux INSTALL_MOD_PATH="$PWD" modules_install
@@ -354,9 +357,9 @@ RUN ( cd /usr/src/haveged && ./configure LDFLAGS='-static --static' ); \
 
 # http://download.virtualbox.org/virtualbox/
 # updated via "update.sh"
-ENV VBOX_VERSION 5.2.20
+ENV VBOX_VERSION 5.2.22
 # https://www.virtualbox.org/download/hashes/$VBOX_VERSION/SHA256SUMS
-ENV VBOX_SHA256 d3c4a0f79a1ff0c35190c530612d83b81a2035eb9f056237888d8b056c07005f
+ENV VBOX_SHA256 e51e33500a265b5c2d7bb2d03d32208df880523dfcb1e2dde2c78a0e0daa0603
 # (VBoxGuestAdditions_X.Y.Z.iso SHA256, for verification)
 
 RUN wget -O /vbox.iso "https://download.virtualbox.org/virtualbox/$VBOX_VERSION/VBoxGuestAdditions_$VBOX_VERSION.iso"; \
@@ -394,7 +397,7 @@ RUN apt-get update && apt-get install -y \
         libtirpc-dev \
         libtirpc1 \
         libtool \
-        curl \
+        curl  unzip g++\
     && rm -rf /var/lib/apt/lists/*
 
 # Build VMware Tools
@@ -403,9 +406,9 @@ ENV OVT_VERSION 10.3.5-10430147
 RUN mkdir -p /open-vm-tools && \
  curl --retry 10 -fsSL "https://github.com/vmware/open-vm-tools/releases/download/stable-$( echo $OVT_VERSION | awk -F'-' '{print $1}')/open-vm-tools-${OVT_VERSION}.tar.gz" | tar -xz --strip-components=1 -C /open-vm-tools
 
-# Compile user space components, we're no longer building kernel module as we're
+ # Compile user space components, we're no longer building kernel module as we're
 # now bundling FUSE shared folders support.
-RUN ROOTFS=/usr/src/linux && cd /open-vm-tools && \
+RUN ROOTFS="$PWD" &&  cd /open-vm-tools && \
     autoreconf -i && \
     ./configure --disable-multimon --disable-docs --disable-tests --with-gnu-ld \
                 --without-kernel-modules --without-procps --without-gtk2 \
@@ -414,6 +417,14 @@ RUN ROOTFS=/usr/src/linux && cd /open-vm-tools && \
     make LIBS="-ltirpc" CFLAGS="-Wno-implicit-function-declaration" && \
     make DESTDIR=$ROOTFS install &&\
     /open-vm-tools/libtool --finish $ROOTFS/usr/local/lib
+
+# Building the Libdnet library for VMware Tools.
+ENV LIBDNET libdnet-1.12
+#RUN  ROOTFS="$PWD" && curl -fL -o /tmp/${LIBDNET}.zip https://github.com/dugsong/libdnet/archive/${LIBDNET}.zip && \
+#    unzip /tmp/${LIBDNET}.zip -d /vmtoolsd && \
+#    cd /vmtoolsd/libdnet-${LIBDNET} && ./configure --build=i486-pc-linux-gnu && \
+#    make && \
+#    make install && make DESTDIR=$ROOTFS install
 
 
 ENV PARALLELS_VERSION 13.3.2-43368
