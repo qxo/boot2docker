@@ -11,7 +11,7 @@ script:
     docker build --rm --cache-from boot2docker/boot2docker  -t boot2docker/boot2docker .
     docker run --rm boot2docker/boot2docker > ${TRAVIS_BUILD_DIR}/boot2docker.iso
     if [ -z "${DEPLOY_ISO_TO_GITHUB}" ] ; then  export DEPLOY_ISO_TO_GITHUB=false ; fi
-    if [ "${DEPLOY_ISO_TO_BINTRAY}" = "true"  ] ; then export ARTIFACT_VERSION=$(cat VERSION);  export ARTIFACT_DATE=$(date +%Y-%m-%d) ; cp bintary_desc.json.tpl ${TRAVIS_BUILD_DIR}/bintary_desc.json ; sed -i "s#ARTIFACT_VERSION#${ARTIFACT_VERSION}#g" ${TRAVIS_BUILD_DIR}/bintary_desc.json ; sed -i "s#ARTIFACT_DATE#${ARTIFACT_DATE}#g" ${TRAVIS_BUILD_DIR}/bintary_desc.json ;sed -i "s#TARGET_DIR#${TRAVIS_BUILD_DIR}#g" ${TRAVIS_BUILD_DIR}/bintary_desc.json; sed -i "s#DESC#$(git branch -vv | grep '*')#g" ${TRAVIS_BUILD_DIR}/bintary_desc.json;fi
+    if [ "${DEPLOY_ISO_TO_BINTRAY}" = "true"  ] ; then export ARTIFACT_VERSION=$(cat VERSION);  export ARTIFACT_DATE=$(date +%Y-%m-%d) ; cp bintary_desc.json.tpl /tmp/bintary_desc.json ; sed -i "s#ARTIFACT_VERSION#${ARTIFACT_VERSION}#g" /tmp/bintary_desc.json ; sed -i "s#ARTIFACT_DATE#${ARTIFACT_DATE}#g" /tmp/bintary_desc.json ;sed -i "s#TARGET_DIR#${TRAVIS_BUILD_DIR}#g" /tmp/bintary_desc.json; sed -i "s#DESC#$(git branch -vv | grep '*')#g" /tmp/bintary_desc.json;fi
 
 cache:
   bundler: true
@@ -39,9 +39,10 @@ deploy:
 #https://github.com/bintray/bintray-examples/blob/master/travis-ci-example
 #https://docs.travis-ci.com/user/deployment/bintray/
 - provider: bintray
-  file: "${TRAVIS_BUILD_DIR}/bintary_desc.json"
+  file: "/tmp/bintary_desc.json"
   user: "${bintray_user}"
   key: ${bintray_key}
+  skip_cleanup: true
 #  passphrase: "Optional. In case a passphrase is configured on Bintray ddand GPG signing is used"
 #  dry-run: ${bintray_dry_run}
   on:
