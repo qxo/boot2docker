@@ -190,7 +190,7 @@ RUN apt-get update && apt-get install -y chrpath gawk texinfo libsdl1.2-dev whip
   rm -rf /var/lib/apt/lists/*
 
 # updated via "update.sh"
-ENV LINUX_VERSION 4.19.1
+ENV LINUX_VERSION 4.19.6
 
 RUN wget -O /linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.xz"; \
 	wget -O /linux.tar.asc "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.sign"
