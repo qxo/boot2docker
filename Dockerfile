@@ -26,7 +26,7 @@ RUN set -eux; \
 	rm -rf /var/lib/apt/lists/*
 
 # https://www.kernel.org/
-ENV KERNEL_VERSION  4.17.5
+ENV KERNEL_VERSION  4.20
 
 # Fetch the kernel sources
 RUN curl -fL --retry 10 "https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.*}.x/linux-$KERNEL_VERSION.tar.xz" | tar -C / -xJ && \
@@ -34,8 +34,8 @@ RUN curl -fL --retry 10 "https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSI
 
 # http://aufs.sourceforge.net/
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
-ENV AUFS_BRANCH     aufs4.17
-ENV AUFS_COMMIT     347f3498aa3ad0a7e272c9032f375e5444edb37f
+ENV AUFS_BRANCH     aufs4.x-rcN
+ENV AUFS_COMMIT     813901540145f6dcf45217f9710d4d4f9ba8a5b0
 # we use AUFS_COMMIT to get stronger repeatability guarantees
 
 # Download AUFS and apply patches and files, then remove it
@@ -183,9 +183,9 @@ RUN curl -fL -o $ROOTFS/usr/local/bin/generate_cert https://github.com/SvenDowid
 
 # Build VBox guest additions
 #   http://download.virtualbox.org/virtualbox/
-ENV VBOX_VERSION 5.2.14
+ENV VBOX_VERSION 6.0.0
 #   https://www.virtualbox.org/download/hashes/$VBOX_VERSION/SHA256SUMS
-ENV VBOX_SHA256 e149ff0876242204fe924763f9272f691242d6a6ad4538a128fb7dba770781de
+ENV VBOX_SHA256 169efc28d82cbf2d0b0156454cc290e2fae49534b6d4adf3bac06e0fefba8fa5
 #   (VBoxGuestAdditions_X.Y.Z.iso SHA256, for verification)
 RUN set -x && \
     \
@@ -205,6 +205,7 @@ RUN set -x && \
         KERN_DIR=/linux-kernel \
         KERN_VER="$KERNEL_VERSION" \
     && \
+    ls -l $ROOTFS/lib/modules/ && mkdir -p $ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/ && \
     cp amd64/src/vboxguest-${VBOX_VERSION}/*.ko $ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/ && \
     \
     mkdir -p $ROOTFS/sbin && \
@@ -235,7 +236,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Build VMware Tools
-ENV OVT_VERSION 10.2.0-7253323
+ENV OVT_VERSION 10.3.5-10430147
 
 RUN mkdir -p /open-vm-tools && \
  curl --retry 10 -fsSL "https://github.com/vmware/open-vm-tools/releases/download/stable-$( echo $OVT_VERSION | awk -F'-' '{print $1}')/open-vm-tools-${OVT_VERSION}.tar.gz" | tar -xz --strip-components=1 -C /open-vm-tools
@@ -272,25 +273,6 @@ RUN ln -sT libtirpc.so "$ROOTFS/usr/local/lib/libtirpc.so.1" \
 # verify that all the above actually worked (at least producing a valid binary, so we don't repeat issue #1157)
 RUN LD_LIBRARY_PATH='/lib:/usr/local/lib' \
 		chroot "$ROOTFS" vmhgfs-fuse --version
-
-# Download and build Parallels Tools
-ENV PRL_MAJOR 13
-ENV PRL_VERSION 13.3.2-43368
-
-RUN set -ex \
-	&& mkdir -p /prl_tools \
-	&& curl -fSL "http://download.parallels.com/desktop/v${PRL_MAJOR}/${PRL_VERSION}/ParallelsTools-${PRL_VERSION}-boot2docker.tar.gz" \
-		| tar -xzC /prl_tools --strip-components 1 \
-	&& cd /prl_tools \
-	&& cp -Rv tools/* $ROOTFS \
-	\
-	&& KERNEL_DIR=/linux-kernel/ KVER="$KERNEL_VERSION" SRC=/linux-kernel/ PRL_FREEZE_SKIP=1 \
-		make -C kmods/ -f Makefile.kmods installme \
-	\
-	&& find kmods/ -name '*.ko' -exec cp {} "$ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/" ';'
-
-# verify that all the above actually worked (at least producing a valid binary, so we don't repeat issue #1157)
-RUN chroot "$ROOTFS" prltoolsd -V
 
 # Build XenServer Tools
 ENV XEN_REPO https://github.com/xenserver/xe-guest-utilities
@@ -363,6 +345,9 @@ RUN echo root > "$ROOTFS/etc/sysconfig/superuser"
 # add some timezone files so we're explicit about being UTC
 RUN echo 'UTC' > "$ROOTFS/etc/timezone" \
 	&& cp -vL /usr/share/zoneinfo/UTC "$ROOTFS/etc/localtime"
+
+#disable autologin
+RUN echo booting > $ROOTFS/etc/sysconfig/noautologin
 
 # make sure the "docker" group exists already
 RUN chroot "$ROOTFS" addgroup -S docker
