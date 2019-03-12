@@ -26,7 +26,7 @@ RUN set -eux; \
 	rm -rf /var/lib/apt/lists/*
 
 # https://www.kernel.org/
-ENV KERNEL_VERSION  4.19.6
+ENV KERNEL_VERSION  4.19.28
 
 # Fetch the kernel sources
 RUN curl -fL --retry 10 "https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.*}.x/linux-$KERNEL_VERSION.tar.xz" | tar -C / -xJ && \
@@ -34,8 +34,8 @@ RUN curl -fL --retry 10 "https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSI
 
 # http://aufs.sourceforge.net/
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
-ENV AUFS_BRANCH     aufs4.19
-ENV AUFS_COMMIT     07d79c88919e35afc7a2b1cf375d6a2d1ce80668
+ENV AUFS_BRANCH     aufs4.19.17+
+ENV AUFS_COMMIT     fcd7a821ba82453d4bf484c96fb65a75995b2fa8
 # we use AUFS_COMMIT to get stronger repeatability guarantees
 
 # Download AUFS and apply patches and files, then remove it
