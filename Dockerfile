@@ -93,8 +93,9 @@ RUN cd $ROOTFS/lib/modules && \
     rm -rf ./*/kernel/net/wireless/*
 
 # Install libcap
-RUN curl -fL http://http.debian.net/debian/pool/main/libc/libcap2/libcap2_2.22.orig.tar.gz | tar -C / -xz && \
-    cd /libcap-2.22 && \
+RUN curl -fL https://mirrors.edge.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.26.tar.xz | tar -C / -xJ && \
+    cd /libcap-2.2* && \
+    export LD_LIBRARY_PATH=/libcap-2.26/output/lib64 && \
     sed -i 's/LIBATTR := yes/LIBATTR := no/' Make.Rules && \
     make && \
     mkdir -p output && \
