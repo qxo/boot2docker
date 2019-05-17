@@ -241,6 +241,31 @@ RUN { \
 	chmod +x /usr/local/bin/linux-kconfig-info; \
 	linux-kconfig-info CGROUPS
 
+# http://aufs.sourceforge.net/
+ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
+ENV AUFS_BRANCH     aufs4.19.17+
+ENV AUFS_COMMIT     fcd7a821ba82453d4bf484c96fb65a75995b2fa8
+# we use AUFS_COMMIT to get stronger repeatability guarantees
+
+# Download AUFS and apply patches and files, then remove it
+RUN  ls -l /usr/src/linux/ && ln -s /usr/src/linux  /linux-kernel && \
+    git clone --single-branch -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs-standalone && \
+    cd /aufs-standalone && \
+    git checkout -q "$AUFS_COMMIT" && \
+    cd /linux-kernel && \
+    cp -r /aufs-standalone/Documentation /linux-kernel && \
+    cp -r /aufs-standalone/fs /linux-kernel && \
+    cp -r /aufs-standalone/include/uapi/linux/aufs_type.h /linux-kernel/include/uapi/linux/ && \
+    set -e && for patch in \
+        /aufs-standalone/aufs*-kbuild.patch \
+        /aufs-standalone/aufs*-base.patch \
+        /aufs-standalone/aufs*-mmap.patch \
+        /aufs-standalone/aufs*-standalone.patch \
+        /aufs-standalone/aufs*-loopback.patch \
+    ; do \
+        patch -p1 < "$patch"; \
+    done
+
 COPY files/kernel-config.d /kernel-config.d
 
 RUN setConfs="$(grep -vEh '^[#-]' /kernel-config.d/* | sort -u)"; \
