@@ -1,6 +1,6 @@
 FROM debian:buster-slim
 
-SHELL ["/bin/bash", "-Eeuo", "pipefail", "-xc"]
+SHELL ["/bin/bash", "-xc"]
 
 RUN apt-get update; \
 	apt-get install -y --no-install-recommends \
