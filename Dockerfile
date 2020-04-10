@@ -400,7 +400,7 @@ RUN apt-get update && apt-get install -y \
         libmspack-dev \
         libssl-dev \
         libtirpc-dev \
-        libtirpc1 \
+        libtirpc-common \
         libtool \
         curl  unzip g++\
     && rm -rf /var/lib/apt/lists/*
