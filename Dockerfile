@@ -364,69 +364,9 @@ RUN make -C /usr/src/vbox/amd64/src/vboxguest -j "$(nproc)" \
 	cp -v /usr/src/vbox/amd64/bin/VBoxControl bin/
 
 # TCL includes VMware's open-vm-tools 10.2.0.1608+ (no reason to compile that ourselves)
-#RUN tcl-tce-load open-vm-tools; \
-#	tcl-chroot vmhgfs-fuse --version; \
-#	tcl-chroot vmtoolsd --version
-
-# Install build dependencies for VMware Tools
-RUN apt-get update && apt-get install -y \
-        autoconf \
-        libdumbnet-dev \
-        libdumbnet1 \
-        libfuse-dev \
-        libfuse2 \
-        libglib2.0-0 \
-        libglib2.0-dev \
-        libmspack-dev \
-        libssl-dev \
-        libtirpc-dev \
-        libtirpc-common \
-        libtool \
-        curl  unzip g++\
-    && rm -rf /var/lib/apt/lists/*
-
-# Build VMware Tools
-ENV OVT_VERSION 10.3.10-12406962
-
-RUN mkdir -p /open-vm-tools && \
- curl --retry 10 -fsSL "https://github.com/vmware/open-vm-tools/releases/download/stable-$( echo $OVT_VERSION | awk -F'-' '{print $1}')/open-vm-tools-${OVT_VERSION}.tar.gz" | tar -xz --strip-components=1 -C /open-vm-tools
-
- # Compile user space components, we're no longer building kernel module as we're
-# now bundling FUSE shared folders support.
-RUN ROOTFS="$PWD" &&  cd /open-vm-tools && \
-    autoreconf -i && \
-    ./configure --disable-multimon --disable-docs --disable-tests --with-gnu-ld \
-                --without-kernel-modules --without-procps --without-gtk2 \
-                --without-gtkmm --without-pam --without-x --without-icu \
-                --without-xerces --without-xmlsecurity --without-ssl && \
-    make LIBS="-ltirpc" CFLAGS="-Wno-implicit-function-declaration" && \
-    make DESTDIR=$ROOTFS install &&\
-    /open-vm-tools/libtool --finish $ROOTFS/usr/local/lib
-
-# Building the Libdnet library for VMware Tools.
-ENV LIBDNET libdnet-1.12
-RUN  ROOTFS="$PWD" && curl -fL -o /tmp/${LIBDNET}.zip https://github.com/dugsong/libdnet/archive/${LIBDNET}.zip && \
-    unzip /tmp/${LIBDNET}.zip -d /vmtoolsd && \
-    cd /vmtoolsd/libdnet-${LIBDNET} && ./configure --build=i486-pc-linux-gnu && \
-    make && \
-    make install && make DESTDIR=$ROOTFS install
-
-
-# Horrible hack again
-RUN ln -sT libdnet.1 "$PWD/usr/local/lib/libdumbnet.so.1" \
-	&& readlink -f "$PWD/usr/local/lib/libdumbnet.so.1"
-
-# TCL 7 doesn't ship with libtirpc.so.1 Dummy it up so the VMware tools work again, taken from:
-# https://github.com/boot2docker/boot2docker/issues/1157#issuecomment-211647607
-RUN ln -sT libtirpc.so "$PWD/usr/local/lib/libtirpc.so.1" \
-	&& readlink -f "$PWD/usr/local/lib/libtirpc.so.1"
-	
-# verify that all the above actually worked (at least producing a valid binary, so we don't repeat issue #1157)
-RUN LD_LIBRARY_PATH='/lib:/usr/lib:/usr/local/lib' \
-		chroot "$PWD" vmhgfs-fuse --version
-
-RUN LD_LIBRARY_PATH='/lib:/usr/lib:/usr/local/lib' \
-	chroot "$PWD"  vmtoolsd --version
+RUN tcl-tce-load open-vm-tools; \
+	tcl-chroot vmhgfs-fuse --version; \
+	tcl-chroot vmtoolsd --version
 
 ENV PARALLELS_VERSION 13.3.2-43368
 
