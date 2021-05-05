@@ -32,6 +32,7 @@ build-master:
     - docker push "$CI_REGISTRY_IMAGE"
   only:
     - master
+    - main
 
 build:
   <<: *default1
@@ -49,6 +50,7 @@ build:
     #- docker run --rm "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" > boot2docker.iso
   except:
     - master
+    - main
 #  artifacts:
 #      paths:
 #        - ./boot2docker.iso
