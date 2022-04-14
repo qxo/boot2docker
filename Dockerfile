@@ -283,6 +283,7 @@ RUN make -C /usr/src/linux -j "$(nproc)" bzImage modules; \
 RUN mkdir -p /tmp/iso/boot; \
 	cp -vLT /usr/src/linux/arch/x86_64/boot/bzImage /tmp/iso/boot/vmlinuz
 
+# 之前因为在打包的过程中 网络不稳定导致下载总会有一个出错 所以这里分了层
 RUN tcl-tce-load \
 		acpid \
 		bash-completion \
