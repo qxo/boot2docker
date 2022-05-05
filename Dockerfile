@@ -407,8 +407,8 @@ RUN DOCKER_CHANNEL='stable'; \
 	\
 # download bash-completion too
 	#wget -O usr/local/share/bash-completion/completions/docker "https://github.com/docker/docker-ce/raw/v${DOCKER_VERSION}/components/cli/contrib/completion/bash/docker"; \
-	#wget -O usr/local/share/bash-completion/completions/docker "https://github.com/docker/cli/raw/v${DOCKER_VERSION}/contrib/completion/bash/docker"; \
-	wget -O usr/local/share/bash-completion/completions/docker "https://gitee.com/ImSEten/docker-cli/raw/v${DOCKER_VERSION}/contrib/completion/bash/docker"; \
+	wget -O usr/local/share/bash-completion/completions/docker "https://github.com/docker/cli/raw/v${DOCKER_VERSION}/contrib/completion/bash/docker"; \
+#	wget -O usr/local/share/bash-completion/completions/docker "https://gitee.com/ImSEten/docker-cli/raw/v${DOCKER_VERSION}/contrib/completion/bash/docker"; \
 	\
 	for binary in \
 		containerd \
