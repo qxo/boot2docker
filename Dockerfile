@@ -174,7 +174,7 @@ RUN tcl-tce-load bash; \
 	[ "$PS1" = '\[\e[1;32m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ ' ]
 
 # updated via "update.sh"
-ENV LINUX_VERSION 4.19.130
+ENV LINUX_VERSION 4.19.243
 
 RUN wget -O /linux.tar.xz "https://mirror.tuna.tsinghua.edu.cn/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.xz"; \
 	wget -O /linux.tar.asc "https://mirror.tuna.tsinghua.edu.cn/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.sign"; \
@@ -392,7 +392,7 @@ RUN wget -O usr/local/sbin/cgroupfs-mount "https://gitee.com/mirrors_Distrotech/
 #    cat usr/local/sbin/cgroupfs-mount; \
 	tcl-chroot cgroupfs-mount
 
-ENV DOCKER_VERSION 20.10.14
+ENV DOCKER_VERSION 20.10.16
 
 # Get the Docker binaries with version that matches our boot2docker version.
 RUN DOCKER_CHANNEL='stable'; \
