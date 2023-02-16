@@ -7,7 +7,7 @@ find -not -name '*.tcz' \
 	> /tmp/iso/boot/initrd.img
 
 # volume label (https://github.com/boot2docker/boot2docker/issues/1347)
-volumeLabel="b2d-v19.03.12"
+volumeLabel="b2d-v$DOCKER_VERSION"
 
 xorriso \
 	-as mkisofs -o /tmp/boot2docker.iso \

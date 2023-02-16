@@ -3,7 +3,20 @@ FROM debian:buster-slim
 SHELL ["/bin/bash", "-Eeuo", "pipefail", "-xc"]
 
 RUN echo "deb http://mirrors.ustc.edu.cn/debian stable main contrib non-free" > /etc/apt/sources.list; \
-    echo "deb http://mirrors.ustc.edu.cn/debian stable-updates main contrib non-free" >>/etc/apt/sources.list;
+    echo "deb http://mirrors.ustc.edu.cn/debian stable-updates main contrib non-free" >> /etc/apt/sources.list; \
+    echo "192.30.255.113	github.com" >> /etc/hosts; \
+    echo "192.30.255.117	api.github.com" >> /etc/hosts; \
+    echo "192.30.255.113	gist.github.com" >> /etc/hosts; \
+    echo "185.199.110.154	help.github.com" >> /etc/hosts; \
+    echo "192.30.255.120	nodeload.github.com" >> /etc/hosts; \
+    echo "185.199.109.153	assets-cdn.github.com" >> /etc/hosts; \
+    echo "185.199.111.133 raw.githubusercontent.com" >> /etc/hosts; \
+    echo "151.101.128.133	camo.githubusercontent.com" >> /etc/hosts; \
+    echo "151.101.44.249	github.global.ssl.fastly.net" >> /etc/hosts; \
+    echo "151.101.0.0/22	avatars0.githubusercontent.com" >> /etc/hosts; \
+    echo "151.101.0.0/22	avatars1.githubusercontent.com" >> /etc/hosts; \
+    echo "151.101.0.0/22	avatars2.githubusercontent.com" >> /etc/hosts; \
+    echo "151.101.0.0/22	avatars3.githubusercontent.com" >> /etc/hosts;
 
 RUN apt-get update; \
 	apt-get install -y --no-install-recommends \
@@ -174,7 +187,7 @@ RUN tcl-tce-load bash; \
 	[ "$PS1" = '\[\e[1;32m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ ' ]
 
 # updated via "update.sh"
-ENV LINUX_VERSION 4.19.243
+ENV LINUX_VERSION 4.19.272
 
 RUN wget -O /linux.tar.xz "https://mirror.tuna.tsinghua.edu.cn/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.xz"; \
 	wget -O /linux.tar.asc "https://mirror.tuna.tsinghua.edu.cn/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.sign"; \
@@ -317,12 +330,12 @@ RUN make -C /usr/src/linux INSTALL_HDR_PATH=/usr/local headers_install
 
 # http://download.virtualbox.org/virtualbox/
 # updated via "update.sh"
-ENV VBOX_VERSION 5.2.34
+ENV VBOX_VERSION 5.2.44
 # https://www.virtualbox.org/download/hashes/$VBOX_VERSION/SHA256SUMS
-ENV VBOX_SHA256 d1b63891abca37fd78f5c8af1764e10e5754b1eecabd1fcfe7599c29a93ba007
+ENV VBOX_SHA256 9883ee443a309f4ffa1d5dee2833f9e35ced598686c36d159f410e5edbac1ca4
 # (VBoxGuestAdditions_X.Y.Z.iso SHA256, for verification)
 
-RUN wget -O /vbox.iso "https://download.virtualbox.org/virtualbox/$VBOX_VERSION/VBoxGuestAdditions_$VBOX_VERSION.iso"; \
+RUN wget -O /vbox.iso "https://mirror.tuna.tsinghua.edu.cn/virtualbox/$VBOX_VERSION/VBoxGuestAdditions_$VBOX_VERSION.iso"; \
 	echo "$VBOX_SHA256 */vbox.iso" | sha256sum -c -; \
 	7z x -o/ /vbox.iso VBoxLinuxAdditions.run; \
 	rm /vbox.iso; \
@@ -347,7 +360,7 @@ RUN tcl-tce-load open-vm-tools; \
 	tcl-chroot vmhgfs-fuse --version; \
 	tcl-chroot vmtoolsd --version
 
-ENV PARALLELS_VERSION 13.3.0-43321
+ENV PARALLELS_VERSION 13.3.2-43368
 
 RUN wget -O /parallels.tgz "https://download.parallels.com/desktop/v${PARALLELS_VERSION%%.*}/$PARALLELS_VERSION/ParallelsTools-$PARALLELS_VERSION-boot2docker.tar.gz"; \
 	mkdir /usr/src/parallels; \
@@ -392,7 +405,7 @@ RUN wget -O usr/local/sbin/cgroupfs-mount "https://gitee.com/mirrors_Distrotech/
 #    cat usr/local/sbin/cgroupfs-mount; \
 	tcl-chroot cgroupfs-mount
 
-ENV DOCKER_VERSION 20.10.16
+ENV DOCKER_VERSION 20.10.23
 
 # Get the Docker binaries with version that matches our boot2docker version.
 RUN DOCKER_CHANNEL='stable'; \
