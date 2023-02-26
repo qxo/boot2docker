@@ -49,5 +49,11 @@ jobs:
       - name: '"ls"'
         run: ls -lh boot2docker.iso
 
-      - name: '"docker images"'
+      - name: 'docker images'
         run: docker images
+
+      - uses: actions/upload-artifact@v2
+        if: ${{startsWith(github.ref_name, 'dist4') }}
+        with:
+          name: boot2docker.iso
+          path: ./boot2docker.iso
