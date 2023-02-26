@@ -5,9 +5,14 @@ on:
   pull_request:
 
   push:
-
-  schedule:
-    - cron: 0 0 * * 0
+  workflow_dispatch:
+     inputs:
+          logLevel:
+            description: 'Log level'
+            required: true
+            default: 'info'
+#  schedule:
+#    - cron: 0 0 * * 0
 
 jobs:
 
