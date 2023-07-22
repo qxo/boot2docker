@@ -22,8 +22,12 @@ echo "deb http://archive.debian.org/debian stretch main contrib non-free" > /etc
 		unzip \
 		xorriso \
 		xz-utils \
+		ca-certificates \
 		bison flex libelf-dev \
 	; \
+	rm -f /etc/ssl/certs/ca-bundle.crt; \
+	 apt-get -y  reinstall ca-certificates;\
+	dpkg-reconfigure ca-certificates;\
 	rm -rf /var/lib/apt/lists/*
 
 # https://www.kernel.org/
