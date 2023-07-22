@@ -1,6 +1,7 @@
 FROM debian:stretch-slim
 
 RUN set -eux; \
+echo "deb http://archive.debian.org/debian stretch main contrib non-free" > /etc/apt/sources.list;\
 	apt-get update; \
 	apt-get -y install \
 		automake \
