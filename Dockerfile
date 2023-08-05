@@ -1,22 +1,25 @@
-FROM debian:buster-slim
+#FROM debian:buster-slim
+FROM debian:bullseye-slim
+#FROM debain
 
 SHELL ["/bin/bash", "-Eeuo", "pipefail", "-xc"]
 
 RUN echo "deb http://mirrors.ustc.edu.cn/debian stable main contrib non-free" > /etc/apt/sources.list; \
-    echo "deb http://mirrors.ustc.edu.cn/debian stable-updates main contrib non-free" >> /etc/apt/sources.list; \
-    echo "192.30.255.113	github.com" >> /etc/hosts; \
-    echo "192.30.255.117	api.github.com" >> /etc/hosts; \
-    echo "192.30.255.113	gist.github.com" >> /etc/hosts; \
-    echo "185.199.110.154	help.github.com" >> /etc/hosts; \
-    echo "192.30.255.120	nodeload.github.com" >> /etc/hosts; \
-    echo "185.199.109.153	assets-cdn.github.com" >> /etc/hosts; \
-    echo "185.199.111.133 raw.githubusercontent.com" >> /etc/hosts; \
-    echo "151.101.128.133	camo.githubusercontent.com" >> /etc/hosts; \
-    echo "151.101.44.249	github.global.ssl.fastly.net" >> /etc/hosts; \
-    echo "151.101.0.0/22	avatars0.githubusercontent.com" >> /etc/hosts; \
-    echo "151.101.0.0/22	avatars1.githubusercontent.com" >> /etc/hosts; \
-    echo "151.101.0.0/22	avatars2.githubusercontent.com" >> /etc/hosts; \
-    echo "151.101.0.0/22	avatars3.githubusercontent.com" >> /etc/hosts;
+    echo "deb http://mirrors.ustc.edu.cn/debian stable-updates main contrib non-free" >> /etc/apt/sources.list
+# \
+#    echo "192.30.255.113	github.com" >> /etc/hosts; \
+#    echo "192.30.255.117	api.github.com" >> /etc/hosts; \
+#    echo "192.30.255.113	gist.github.com" >> /etc/hosts; \
+#    echo "185.199.110.154	help.github.com" >> /etc/hosts; \
+#    echo "192.30.255.120	nodeload.github.com" >> /etc/hosts; \
+#    echo "185.199.109.153	assets-cdn.github.com" >> /etc/hosts; \
+#    echo "185.199.111.133 raw.githubusercontent.com" >> /etc/hosts; \
+#    echo "151.101.128.133	camo.githubusercontent.com" >> /etc/hosts; \
+#    echo "151.101.44.249	github.global.ssl.fastly.net" >> /etc/hosts; \
+#    echo "151.101.0.0/22	avatars0.githubusercontent.com" >> /etc/hosts; \
+#    echo "151.101.0.0/22	avatars1.githubusercontent.com" >> /etc/hosts; \
+#    echo "151.101.0.0/22	avatars2.githubusercontent.com" >> /etc/hosts; \
+#    echo "151.101.0.0/22	avatars3.githubusercontent.com" >> /etc/hosts;
 
 RUN apt-get update; \
 	apt-get install -y --no-install-recommends \
@@ -24,6 +27,8 @@ RUN apt-get update; \
 		bc \
 		bison \
 		ca-certificates \
+                perl \
+                openssl \
 		cpio \
 		flex \
 		gcc \
@@ -54,11 +59,11 @@ WORKDIR /rootfs
 # updated via "update.sh"
 ENV TCL_MIRRORS http://distro.ibiblio.org/tinycorelinux http://repo.tinycorelinux.net
 ENV TCL_MAJOR 10.x
-ENV TCL_VERSION 10.1
+ENV TCL_VERSION 10.0
 
 # http://distro.ibiblio.org/tinycorelinux/8.x/x86_64/archive/8.2.1/distribution_files/rootfs64.gz.md5.txt
 # updated via "update.sh"
-ENV TCL_ROOTFS="rootfs64.gz" TCL_ROOTFS_MD5="ec65d3b2bbb64f62a171f60439c84127"
+ENV TCL_ROOTFS="rootfs64.gz" TCL_ROOTFS_MD5="534e09719f8a7ffaef4a9a0f847131a0"
 
 COPY files/tce-load.patch files/udhcpc.patch /tcl-patches/
 
@@ -99,6 +104,7 @@ RUN for mirror in $TCL_MIRRORS; do \
 		echo 'nameserver 8.8.4.4'; \
 	} > etc/resolv.conf; \
 	cp etc/resolv.conf etc/resolv.conf.b2d; \
+        set -x; \
 	{ \
 		echo '#!/usr/bin/env bash'; \
 		echo 'set -Eeuo pipefail'; \
@@ -187,7 +193,7 @@ RUN tcl-tce-load bash; \
 	[ "$PS1" = '\[\e[1;32m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ ' ]
 
 # updated via "update.sh"
-ENV LINUX_VERSION 4.19.272
+ENV LINUX_VERSION 4.19.288
 
 RUN wget -O /linux.tar.xz "https://mirror.tuna.tsinghua.edu.cn/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.xz"; \
 	wget -O /linux.tar.asc "https://mirror.tuna.tsinghua.edu.cn/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.sign"; \
@@ -330,9 +336,9 @@ RUN make -C /usr/src/linux INSTALL_HDR_PATH=/usr/local headers_install
 
 # http://download.virtualbox.org/virtualbox/
 # updated via "update.sh"
-ENV VBOX_VERSION 5.2.44
+ENV VBOX_VERSION 6.1.46
 # https://www.virtualbox.org/download/hashes/$VBOX_VERSION/SHA256SUMS
-ENV VBOX_SHA256 9883ee443a309f4ffa1d5dee2833f9e35ced598686c36d159f410e5edbac1ca4
+ENV VBOX_SHA256 a65927369c852895e827c6d6d5be3d14c2da1dfd4e7a4b9ca7479320e5121ffc
 # (VBoxGuestAdditions_X.Y.Z.iso SHA256, for verification)
 
 RUN wget -O /vbox.iso "https://mirror.tuna.tsinghua.edu.cn/virtualbox/$VBOX_VERSION/VBoxGuestAdditions_$VBOX_VERSION.iso"; \

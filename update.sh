@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-
+set -x
 # TODO http://distro.ibiblio.org/tinycorelinux/latest-x86_64
-major='13.x'
-version='13.0' # TODO auto-detect latest
+major='10.x'
+version='10.0' # TODO auto-detect latest
 # 9.x doesn't seem to use ".../archive/X.Y.Z/..." in the same way as 8.x :(
 
 mirrors=(
@@ -12,7 +12,7 @@ mirrors=(
 )
 
 # https://www.kernel.org/
-kernelBase='5.15.10'
+kernelBase='4.19.'
 # https://github.com/boot2docker/boot2docker/issues/1398
 # https://download.virtualbox.org/virtualbox/
 vboxBase='6'
@@ -62,9 +62,11 @@ kernelVersion="$(
 	wget -qO- 'https://www.kernel.org/releases.json' \
 		| jq -r --arg base "$kernelBase" '.releases[] | .version | select(startswith($base + "."))'
 )"
+if [ -n "$kernelVersion" ]; then
 seds+=(
 	-e 's!^(ENV LINUX_VERSION).*!\1 '"$kernelVersion"'!'
 )
+fi
 
 #vboxVersion="$(wget -qO- 'https://download.virtualbox.org/virtualbox/LATEST-STABLE.TXT')"
 vboxVersion="$(
