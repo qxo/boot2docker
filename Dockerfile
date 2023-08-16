@@ -1,6 +1,9 @@
 FROM debian:stretch-slim
 
 RUN set -eux; \
+    sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list;\
+    sed -i 's|security.debian.org|archive.debian.org/|g' /etc/apt/sources.list;\
+    sed -i '/stretch-updates/d' /etc/apt/sources.list;\
 	apt-get update; \
 	apt-get -y install \
 		automake \
@@ -26,7 +29,7 @@ RUN set -eux; \
 	rm -rf /var/lib/apt/lists/*
 
 # https://www.kernel.org/
-ENV KERNEL_VERSION 4.19.291
+ENV KERNEL_VERSION 4.19.292
 
 # Fetch the kernel sources
 RUN curl -fL --retry 10 "https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.*}.x/linux-$KERNEL_VERSION.tar.xz" | tar -C / -xJ && \
@@ -122,7 +125,8 @@ RUN set -ex \
 # Prepare the ISO directory with the kernel
 RUN cp -v /linux-kernel/arch/x86_64/boot/bzImage /tmp/iso/boot/vmlinuz64
 
-ENV TCL_REPO_BASE   http://distro.ibiblio.org/tinycorelinux/8.x/x86_64
+#ENV TCL_REPO_BASE   http://distro.ibiblio.org/tinycorelinux/8.x/x86_64
+ENV TCL_REPO_BASE  http://mirror.cpsc.ucalgary.ca/mirror/tinycorelinux/8.x/x86_64
 ENV TCL_REPO_FALLBACK              http://tinycorelinux.net/8.x/x86_64
 # Note that the ncurses is here explicitly so that top continues to work
 ENV TCZ_DEPS        iptables \
@@ -185,9 +189,9 @@ RUN curl -fL -o $ROOTFS/usr/local/bin/generate_cert https://github.com/SvenDowid
 
 # Build VBox guest additions
 #   http://download.virtualbox.org/virtualbox/
-ENV VBOX_VERSION 5.2.22
+ENV VBOX_VERSION 7.0.10
 #   https://www.virtualbox.org/download/hashes/$VBOX_VERSION/SHA256SUMS
-ENV VBOX_SHA256 e51e33500a265b5c2d7bb2d03d32208df880523dfcb1e2dde2c78a0e0daa0603
+ENV VBOX_SHA256 bbabd89b8fff38a257bab039a278f0c4dc4426eff6e4238c1db01edb7284186a
 #   (VBoxGuestAdditions_X.Y.Z.iso SHA256, for verification)
 RUN set -x && \
     \
@@ -234,10 +238,17 @@ RUN apt-get update && apt-get install -y \
         libtirpc-dev \
         libtirpc1 \
         libtool \
+        gawk \
     && rm -rf /var/lib/apt/lists/*
 
+#RUN curl -o ./glibc-2.28.tar.xz  https://mirror.bjtu.edu.cn/gnu/libc/glibc-2.28.tar.xz && \
+#    tar -xf glibc-2.28.tar.xz -C /usr/local/ &&  cd /usr/local/glibc-2.28/ && \
+#    mkdir build && cd build/ && \
+#    ../configure --prefix=/usr --disable-sanity-checks --disable-profile --enable-add-ons \
+#     && make && make install
+
 # Build VMware Tools
-ENV OVT_VERSION 10.2.0-7253323
+ENV OVT_VERSION 12.2.5-21855600
 
 RUN mkdir -p /open-vm-tools && \
  curl --retry 10 -fsSL "https://github.com/vmware/open-vm-tools/releases/download/stable-$( echo $OVT_VERSION | awk -F'-' '{print $1}')/open-vm-tools-${OVT_VERSION}.tar.gz" | tar -xz --strip-components=1 -C /open-vm-tools
@@ -249,13 +260,13 @@ RUN cd /open-vm-tools && \
     ./configure --disable-multimon --disable-docs --disable-tests --with-gnu-ld \
                 --without-kernel-modules --without-procps --without-gtk2 \
                 --without-gtkmm --without-pam --without-x --without-icu \
-                --without-xerces --without-xmlsecurity --without-ssl && \
+                --without-xerces --without-xmlsecurity --without-ssl --disable-glibc-check && \
     make LIBS="-ltirpc" CFLAGS="-Wno-implicit-function-declaration" && \
     make DESTDIR=$ROOTFS install &&\
     /open-vm-tools/libtool --finish $ROOTFS/usr/local/lib
 
 # Building the Libdnet library for VMware Tools.
-ENV LIBDNET libdnet-1.12
+ENV LIBDNET libdnet-1.14
 RUN curl -fL -o /tmp/${LIBDNET}.zip https://github.com/dugsong/libdnet/archive/${LIBDNET}.zip && \
     unzip /tmp/${LIBDNET}.zip -d /vmtoolsd && \
     cd /vmtoolsd/libdnet-${LIBDNET} && ./configure --build=i486-pc-linux-gnu && \
@@ -272,8 +283,8 @@ RUN ln -sT libtirpc.so "$ROOTFS/usr/local/lib/libtirpc.so.1" \
 	&& readlink -f "$ROOTFS/usr/local/lib/libtirpc.so.1"
 
 # verify that all the above actually worked (at least producing a valid binary, so we don't repeat issue #1157)
-RUN LD_LIBRARY_PATH='/lib:/usr/local/lib' \
-		chroot "$ROOTFS" vmhgfs-fuse --version
+RUN strings /lib/x86_64-linux-gnu/libc.so.6| grep GLIBC;ldd -v /usr/bin/gcc;LD_LIBRARY_PATH='/lib:/usr/local/lib' \
+		chroot "$ROOTFS" /bin/sh -c "strings /lib/libc.so.6 | grep GLIBC;vmhgfs-fuse --version"
 
 # Download and build Parallels Tools
 ENV PRL_MAJOR 13
@@ -296,7 +307,7 @@ RUN chroot "$ROOTFS" prltoolsd -V
 
 # Build XenServer Tools
 ENV XEN_REPO https://github.com/xenserver/xe-guest-utilities
-ENV XEN_VERSION v7.10.0
+ENV XEN_VERSION v7.13.0
 
 RUN set -ex \
 	&& git clone --single-branch -b "$XEN_VERSION" "$XEN_REPO" /xentools \
