@@ -29,16 +29,16 @@ RUN set -eux; \
 	rm -rf /var/lib/apt/lists/*
 
 # https://www.kernel.org/
-ENV KERNEL_VERSION 4.19.292
+ENV KERNEL_VERSION 5.10.192
 
 # Fetch the kernel sources
 RUN curl -fL --retry 10 "https://www.kernel.org/pub/linux/kernel/v${KERNEL_VERSION%%.*}.x/linux-$KERNEL_VERSION.tar.xz" | tar -C / -xJ && \
     mv /linux-$KERNEL_VERSION /linux-kernel
 
 # http://aufs.sourceforge.net/
-ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
-ENV AUFS_BRANCH     aufs4.19.63+
-ENV AUFS_COMMIT     1bb4caf8d7ee47acc49f05deb4da9d34884c44b2
+ENV AUFS_REPO       https://github.com/sfjro/aufs-standalone
+ENV AUFS_BRANCH     aufs5.10.140
+ENV AUFS_COMMIT     0c55dd9dcf13d5de98218aca4b1a6ad1181acb33
 # we use AUFS_COMMIT to get stronger repeatability guarantees
 
 # Download AUFS and apply patches and files, then remove it
@@ -96,9 +96,9 @@ RUN cd $ROOTFS/lib/modules && \
     rm -rf ./*/kernel/net/wireless/*
 
 # Install libcap
-RUN curl -fL https://mirrors.edge.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.26.tar.xz | tar -C / -xJ && \
-    cd /libcap-2.2* && \
-    export LD_LIBRARY_PATH=/libcap-2.26/output/lib64 && \
+RUN curl -fL https://mirrors.edge.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.28.tar.xz | tar -C / -xJ && \
+    cd /libcap-2.* && \
+    export LD_LIBRARY_PATH=/libcap-2.28/output/lib64 && \
     sed -i 's/LIBATTR := yes/LIBATTR := no/' Make.Rules && \
     make && \
     mkdir -p output && \
@@ -108,8 +108,8 @@ RUN curl -fL https://mirrors.edge.kernel.org/pub/linux/libs/security/linux-privs
 
 # Make sure the kernel headers are installed for aufs-util, and then build it
 ENV AUFS_UTIL_REPO    https://git.code.sf.net/p/aufs/aufs-util
-ENV AUFS_UTIL_BRANCH  aufs4.x-rcN
-ENV AUFS_UTIL_COMMIT  81d51868758bd06fb4ed23816efe38a89f3218c9
+ENV AUFS_UTIL_BRANCH  aufs5.x-rcN
+ENV AUFS_UTIL_COMMIT  7641eb39d3597c1dbf98085c49e476158c94b3f8
 
 RUN set -ex \
 	&& git clone --single-branch -b "$AUFS_UTIL_BRANCH" "$AUFS_UTIL_REPO" /aufs-util \
@@ -191,10 +191,10 @@ RUN curl -fL -o $ROOTFS/usr/local/bin/generate_cert https://github.com/SvenDowid
 #   http://download.virtualbox.org/virtualbox/
 ENV VBOX_VERSION 7.0.10
 #   https://www.virtualbox.org/download/hashes/$VBOX_VERSION/SHA256SUMS
-ENV VBOX_SHA256 bbabd89b8fff38a257bab039a278f0c4dc4426eff6e4238c1db01edb7284186a
+ENV VBOX_SHA256 bbabd89b8fff38a257bab039a278f0c4dc4426eff6e4238c1db01edb7284186a   
 #   (VBoxGuestAdditions_X.Y.Z.iso SHA256, for verification)
 RUN set -x && \
-    \
+    if [ "${VBOX_ON}" = "Y" ] ; then\
     mkdir -p /vboxguest && \
     cd /vboxguest && \
     \
@@ -216,7 +216,7 @@ RUN set -x && \
     mkdir -p $ROOTFS/sbin && \
     cp amd64/other/mount.vboxsf amd64/sbin/VBoxService $ROOTFS/sbin/ && \
     mkdir -p $ROOTFS/bin && \
-    cp amd64/bin/VBoxClient amd64/bin/VBoxControl $ROOTFS/bin/
+    cp amd64/bin/VBoxClient amd64/bin/VBoxControl $ROOTFS/bin/ ; fi
 
 # TODO figure out how to make this work reasonably (these tools try to read /proc/self/exe at startup, even for a simple "--version" check)
 ## verify that all the above actually worked (at least producing a valid binary, so we don't repeat issue #1157)
@@ -290,8 +290,9 @@ RUN strings /lib/x86_64-linux-gnu/libc.so.6| grep GLIBC;ldd -v /usr/bin/gcc;LD_L
 ENV PRL_MAJOR 13
 ENV PRL_VERSION 13.3.2-43368
 
-RUN set -ex \
-	&& mkdir -p /prl_tools \
+RUN set -ex; \
+    if [ "${PRL_ON}" = "Y" ] ; then\
+	mkdir -p /prl_tools \
 	&& curl -fSL "http://download.parallels.com/desktop/v${PRL_MAJOR}/${PRL_VERSION}/ParallelsTools-${PRL_VERSION}-boot2docker.tar.gz" \
 		| tar -xzC /prl_tools --strip-components 1 \
 	&& cd /prl_tools \
@@ -300,10 +301,10 @@ RUN set -ex \
 	&& KERNEL_DIR=/linux-kernel/ KVER="$KERNEL_VERSION" SRC=/linux-kernel/ PRL_FREEZE_SKIP=1 \
 		make -C kmods/ -f Makefile.kmods installme \
 	\
-	&& find kmods/ -name '*.ko' -exec cp {} "$ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/" ';'
+	&& find kmods/ -name '*.ko' -exec cp {} "$ROOTFS/lib/modules/$KERNEL_VERSION-boot2docker/" ';' ;  fi
 
 # verify that all the above actually worked (at least producing a valid binary, so we don't repeat issue #1157)
-RUN chroot "$ROOTFS" prltoolsd -V
+# RUN chroot "$ROOTFS" prltoolsd -V
 
 # Build XenServer Tools
 ENV XEN_REPO https://github.com/xenserver/xe-guest-utilities
