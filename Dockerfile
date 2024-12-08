@@ -25,6 +25,8 @@ RUN apt-get update; \
 		wget \
 		xorriso \
 		xz-utils \
+		python3 \
+		dwarves \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
@@ -239,7 +241,8 @@ RUN { \
 
 COPY files/kernel-config.d /kernel-config.d
 
-RUN setConfs="$(grep -vEh '^[#-]' /kernel-config.d/* | sort -u)"; \
+RUN grep -r CONFIG_DEBUG_INFO_BTF_MODULES -C 2  /usr/src/linux ;\
+    setConfs="$(grep -vEh '^[#-]' /kernel-config.d/* | sort -u)"; \
 	unsetConfs="$(sed -n 's/^-//p' /kernel-config.d/* | sort -u)"; \
 	IFS=$'\n'; \
 	setConfs=( $setConfs ); \
@@ -407,7 +410,7 @@ RUN wget -O usr/local/sbin/cgroupfs-mount "https://github.com/tianon/cgroupfs-mo
 	chmod +x usr/local/sbin/cgroupfs-mount; \
 	tcl-chroot cgroupfs-mount
 
-ENV DOCKER_VERSION 24.0.9
+ENV DOCKER_VERSION 27.3.1
 
 # Get the Docker binaries with version that matches our boot2docker version.
 RUN DOCKER_CHANNEL='stable'; \
