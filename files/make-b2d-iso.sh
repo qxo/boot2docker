@@ -38,7 +38,7 @@ mkdir -p /tmp/stats
 
 	echo "- Tiny Core Linux [v$TCL_VERSION](http://forum.tinycorelinux.net/index.php?board=31.0)"
 
-	echo "- Parallels Tools v$PARALLELS_VERSION" # https://github.com/boot2docker/boot2docker/pull/1332#issuecomment-420273330
+	#echo "- Parallels Tools v$PARALLELS_VERSION" # https://github.com/boot2docker/boot2docker/pull/1332#issuecomment-420273330
 
 	ovtVersion=$(wget -qO- http://repo.tinycorelinux.net/$TCL_MAJOR/x86_64/tcz/open-vm-tools.tcz.info | grep -oE 'Version:	[^ ]+' | cut -d$'\t' -f2)
 

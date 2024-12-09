@@ -25,6 +25,8 @@ RUN apt-get update; \
 		wget \
 		xorriso \
 		xz-utils \
+		python3 \
+		dwarves \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
@@ -37,12 +39,12 @@ WORKDIR /rootfs
 
 # updated via "update.sh"
 ENV TCL_MIRRORS http://repo.tinycorelinux.net http://mirrors.163.com/tinycorelinux
-ENV TCL_MAJOR 13.x
-ENV TCL_VERSION 13.1
+ENV TCL_MAJOR 15.x
+ENV TCL_VERSION 15.0
 
-# http://mirrors.163.com/tinycorelinux/13.x/x86_64/release/distribution_files/rootfs64.gz.md5.txt
+# http://mirrors.163.com/tinycorelinux/15.x/x86_64/release/distribution_files/rootfs64.gz.md5.txt
 # updated via "update.sh"
-ENV TCL_ROOTFS="rootfs64.gz" TCL_ROOTFS_MD5="337441ac3eb75561a9d702d783e678ba"
+ENV TCL_ROOTFS="rootfs64.gz" TCL_ROOTFS_MD5="2f537d9b34a36b87a3488ab16b0e242a"
 
 COPY files/tce-load.patch files/udhcpc.patch /tcl-patches/
 
@@ -178,7 +180,7 @@ ENV LINUX_GPG_KEYS \
 		647F28654894E3BD457199BE38DBBDC86092693E
 
 # updated via "update.sh"
-ENV LINUX_VERSION 5.15.130
+ENV LINUX_VERSION 6.6.64
 
 RUN wget -O /linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.xz"; \
 	wget -O /linux.tar.asc "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.sign"; \
@@ -239,7 +241,8 @@ RUN { \
 
 COPY files/kernel-config.d /kernel-config.d
 
-RUN setConfs="$(grep -vEh '^[#-]' /kernel-config.d/* | sort -u)"; \
+RUN grep -r CONFIG_DEBUG_INFO_BTF_MODULES -C 2  /usr/src/linux ;\
+    setConfs="$(grep -vEh '^[#-]' /kernel-config.d/* | sort -u)"; \
 	unsetConfs="$(sed -n 's/^-//p' /kernel-config.d/* | sort -u)"; \
 	IFS=$'\n'; \
 	setConfs=( $setConfs ); \
@@ -329,9 +332,9 @@ RUN make -C /usr/src/linux INSTALL_HDR_PATH=/usr/local headers_install
 
 # http://download.virtualbox.org/virtualbox/
 # updated via "update.sh"
-ENV VBOX_VERSION 6.1.46
+ENV VBOX_VERSION 7.1.4
 # https://www.virtualbox.org/download/hashes/$VBOX_VERSION/SHA256SUMS
-ENV VBOX_SHA256 a65927369c852895e827c6d6d5be3d14c2da1dfd4e7a4b9ca7479320e5121ffc
+ENV VBOX_SHA256 80c91d35742f68217cf47b13e5b50d53f54c22c485bacce41ad7fdc321649e61
 # (VBoxGuestAdditions_X.Y.Z.iso SHA256, for verification)
 
 RUN wget -O /vbox.iso "https://download.virtualbox.org/virtualbox/$VBOX_VERSION/VBoxGuestAdditions_$VBOX_VERSION.iso"; \
@@ -359,25 +362,10 @@ RUN tcl-tce-load open-vm-tools; \
 	tcl-chroot vmhgfs-fuse --version;
 	#tcl-chroot vmtoolsd --version
 
-ENV PARALLELS_VERSION 18.3.0-53606
-
-RUN wget -O /parallels.tgz "https://download.parallels.com/desktop/v${PARALLELS_VERSION%%.*}/$PARALLELS_VERSION/ParallelsTools-$PARALLELS_VERSION-boot2docker.tar.gz"; \
-	mkdir /usr/src/parallels; \
-	tar --extract --file /parallels.tgz --directory /usr/src/parallels --strip-components 1; \
-	rm /parallels.tgz
-RUN cp -vr /usr/src/parallels/tools/* ./; \
-	make -C /usr/src/parallels/kmods -f Makefile.kmods -j "$(nproc)" compile \
-		SRC='/usr/src/linux' \
-		KERNEL_DIR='/usr/src/linux' \
-		KVER="$(< /usr/src/linux/include/config/kernel.release)" \
-		PRL_FREEZE_SKIP=1 \
-	; \
-	find /usr/src/parallels/kmods -name '*.ko' -exec cp -v '{}' lib/modules/*/ ';'; \
-	tcl-chroot prltoolsd -V
 
 # https://github.com/xenserver/xe-guest-utilities/tags
 # updated via "update.sh"
-ENV XEN_VERSION 8.3.0
+ENV XEN_VERSION 8.4.0
 
 RUN wget -qO- https://dl.google.com/go/go1.19.9.linux-amd64.tar.gz | tar zxf - -C /usr/local --strip-components=1
 RUN wget -O /xen.tgz "https://github.com/xenserver/xe-guest-utilities/archive/v$XEN_VERSION.tar.gz"; \
@@ -407,7 +395,7 @@ RUN wget -O usr/local/sbin/cgroupfs-mount "https://github.com/tianon/cgroupfs-mo
 	chmod +x usr/local/sbin/cgroupfs-mount; \
 	tcl-chroot cgroupfs-mount
 
-ENV DOCKER_VERSION 24.0.5
+ENV DOCKER_VERSION 27.3.1
 
 # Get the Docker binaries with version that matches our boot2docker version.
 RUN DOCKER_CHANNEL='stable'; \
