@@ -41,7 +41,12 @@ fi
 
 crond -L /var/lib/boot2docker/log/crond.log
 
-/etc/init.d/vbox start
+if [ -e /var/lib/boot2docker//bootinit-before-service.sh ]; then
+    # for rm /usr/local/etc/init.d/prltoolsd /usr/local/etc/init.d/prltoolsd /etc/init.d/vbox /usr/local/sbin/hv_kvp_daemon
+	sh /var/lib/boot2docker/bootinit-before-service.sh
+fi
+
+test -e /etc/init.d/vbox && /etc/init.d/vbox start
 if grep -qi vmware /sys/class/dmi/id/sys_vendor 2>/dev/null; then
 	# try to mount the root shared folder; this command can fail (if shared folders are disabled on the host, vmtoolsd will take care of the mount if they are enabled while the machine is running)
 	[ -d /mnt/hgfs ] || { mkdir -p /mnt/hgfs; vmhgfs-fuse -o allow_other .host:/ /mnt/hgfs; }
@@ -53,11 +58,13 @@ if grep -qi vmware /sys/class/dmi/id/sys_vendor 2>/dev/null; then
 		/opt/vmware-shares-additions
 	fi
 fi
-if modprobe hv_utils > /dev/null 2>&1; then
+
+if [ -e /usr/local/sbin/hv_kvp_daemon -a  modprobe hv_utils > /dev/null 2>&1  ]; then 
 	hv_kvp_daemon
 fi
-/usr/local/etc/init.d/prltoolsd start
-/etc/init.d/xe-linux-distribution start
+
+test -e /usr/local/etc/init.d/prltoolsd && /usr/local/etc/init.d/prltoolsd start
+test -e /etc/init.d/xe-linux-distribution && /etc/init.d/xe-linux-distribution start
 
 #QEMU_HV=$(cat /sys/class/dmi/id/sys_vendor | grep -ic qemu)
 #if [ "${QEMU_HV}" -gt 0 ]; then
@@ -99,10 +106,10 @@ if [ -e /var/lib/boot2docker/bootsync.sh ]; then
 	sh /var/lib/boot2docker/bootsync.sh
 fi
 
-/etc/init.d/docker start
+test -e /etc/init.d/docker && /etc/init.d/docker start
 
 if [ -e /var/lib/boot2docker/bootlocal.sh ]; then
 	sh /var/lib/boot2docker/bootlocal.sh &
 fi
 
-/opt/bootlocal.sh &
+test -e /opt/bootlocal.sh && /opt/bootlocal.sh &

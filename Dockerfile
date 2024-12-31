@@ -180,7 +180,7 @@ RUN tcl-tce-load bash; \
 	[ "$PS1" = '\[\e[1;32m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ ' ]
 
 # updated via "update.sh"
-ENV LINUX_VERSION 6.6.67
+ENV LINUX_VERSION 6.6.68
 
 RUN wget -O /linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.xz"; \
 	wget -O /linux.tar.sign "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.sign"; \
@@ -243,6 +243,7 @@ RUN tcl-tce-load \
 		git \
 		iproute2 \
 		iptables \
+		nftables \
 		nfs-utils \
 		openssh \
 		openssl-1.1.1 \
@@ -300,9 +301,9 @@ RUN make -C /usr/src/vbox/amd64/src/vboxguest -j "$(nproc)" \
 	cp -v /usr/src/vbox/amd64/bin/VBoxControl bin/
 
 # TCL includes VMware's open-vm-tools 10.2.0.1608+ (no reason to compile that ourselves)
-RUN tcl-tce-load open-vm-tools; \
-	tcl-chroot vmhgfs-fuse --version; \
-	tcl-chroot vmtoolsd --version
+RUN set -x;tcl-tce-load open-vm-tools; \
+	tcl-chroot vmhgfs-fuse --version; 
+	#tcl-chroot vmtoolsd --version
 
 ENV PARALLELS_VERSION 18.2.0-53488
 
@@ -352,7 +353,8 @@ RUN echo 'cgroup2 /sys/fs/cgroup cgroup2 rw,nosuid,nodev,noexec,relatime,nsdeleg
 
 ENV DOCKER_VERSION 27.4.1
 
-# Get the Docker binaries with version that matches our boot2docker version.
+# Get the Docker binaries with version that matches our 
+
 #RUN DOCKER_CHANNEL='edge'; \
 RUN DOCKER_CHANNEL='stable'; \
 	case "$DOCKER_VERSION" in \

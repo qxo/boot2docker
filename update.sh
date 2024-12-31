@@ -76,7 +76,7 @@ seds+=(
 )
 
 # PARALLELS_VERSION: https://github.com/boot2docker/boot2docker/pull/1332#issuecomment-420273330
-
+if [ "$xenVersionOn" = 'Y']; then
 xenVersion="$(
 	git ls-remote --tags 'https://github.com/xenserver/xe-guest-utilities.git' \
 		| cut -d/ -f3 \
@@ -89,6 +89,6 @@ xenVersion="$(
 seds+=(
 	-e 's!^(ENV XEN_VERSION).*!\1 '"$xenVersion"'!'
 )
-
+fi
 set -x
 sed -ri "${seds[@]}" Dockerfile

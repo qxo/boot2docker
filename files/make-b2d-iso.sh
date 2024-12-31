@@ -9,6 +9,27 @@ find -not -name '*.tcz' \
 # volume label (https://github.com/boot2docker/boot2docker/issues/1347)
 volumeLabel="b2d-v$DOCKER_VERSION"
 
+mkdir -p /tmp/stats
+{
+	echo "- cat $(etc/boot2docker)"
+	echo "- Docker [v$DOCKER_VERSION](https://github.com/docker/docker-ce/releases/tag/v$DOCKER_VERSION)"
+
+	echo "- Linux [v$LINUX_VERSION](https://cdn.kernel.org/pub/linux/kernel/v4.x/ChangeLog-$LINUX_VERSION)"
+
+	echo "- Tiny Core Linux [v$TCL_VERSION](http://forum.tinycorelinux.net/index.php?board=31.0)"
+
+	#echo "- Parallels Tools v$PARALLELS_VERSION"  # https://github.com/boot2docker/boot2docker/pull/1332#issuecomment-420273330
+
+	#ovtVersion="$(tcl-chroot vmtoolsd --version | grep -oE 'version [^ ]+' | cut -d' ' -f2)"  [v$ovtVersion]
+	echo "- VMware Tools (\`open-vm-tools\`) (http://distro.ibiblio.org/tinycorelinux/$TCL_MAJOR/x86_64/tcz/open-vm-tools.tcz.info)"
+
+	echo "- VirtualBox Guest Additions [v$VBOX_VERSION](https://download.virtualbox.org/virtualbox/$VBOX_VERSION/)"
+
+	echo "- XenServer Tools (\`xe-guest-utilities\`) [v$XEN_VERSION](https://github.com/xenserver/xe-guest-utilities/tree/v$XEN_VERSION)"
+} | tee /tmp/stats/state.md
+cp /tmp/stats/state.md etc/versoin
+
+cat etc/versoin
 xorriso \
 	-as mkisofs -o /tmp/boot2docker.iso \
 	-A 'Boot2Docker' \
@@ -21,7 +42,6 @@ xorriso \
 	-boot-info-table \
 	/tmp/iso
 
-mkdir -p /tmp/stats
 (
 	cd /tmp
 	echo '```console'
@@ -31,19 +51,3 @@ mkdir -p /tmp/stats
 	done
 	echo '```'
 ) | tee /tmp/stats/sums.md
-{
-	echo "- Docker [v$DOCKER_VERSION](https://github.com/docker/docker-ce/releases/tag/v$DOCKER_VERSION)"
-
-	echo "- Linux [v$LINUX_VERSION](https://cdn.kernel.org/pub/linux/kernel/v4.x/ChangeLog-$LINUX_VERSION)"
-
-	echo "- Tiny Core Linux [v$TCL_VERSION](http://forum.tinycorelinux.net/index.php?board=31.0)"
-
-	echo "- Parallels Tools v$PARALLELS_VERSION" # https://github.com/boot2docker/boot2docker/pull/1332#issuecomment-420273330
-
-	ovtVersion="$(tcl-chroot vmtoolsd --version | grep -oE 'version [^ ]+' | cut -d' ' -f2)"
-	echo "- VMware Tools (\`open-vm-tools\`) [v$ovtVersion](http://distro.ibiblio.org/tinycorelinux/$TCL_MAJOR/x86_64/tcz/open-vm-tools.tcz.info)"
-
-	echo "- VirtualBox Guest Additions [v$VBOX_VERSION](https://download.virtualbox.org/virtualbox/$VBOX_VERSION/)"
-
-	echo "- XenServer Tools (\`xe-guest-utilities\`) [v$XEN_VERSION](https://github.com/xenserver/xe-guest-utilities/tree/v$XEN_VERSION)"
-} | tee /tmp/stats/state.md
