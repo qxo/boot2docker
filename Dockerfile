@@ -180,7 +180,7 @@ RUN tcl-tce-load bash; \
 	[ "$PS1" = '\[\e[1;32m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ ' ]
 
 # updated via "update.sh"
-ENV LINUX_VERSION 6.6.68
+ENV LINUX_VERSION 6.6.103
 
 RUN wget -O /linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.xz"; \
 	wget -O /linux.tar.sign "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.sign"; \
@@ -275,9 +275,9 @@ RUN make -C /usr/src/linux INSTALL_HDR_PATH=/usr/local headers_install
 
 # http://download.virtualbox.org/virtualbox/
 # updated via "update.sh"
-ENV VBOX_VERSION 7.0.22
+ENV VBOX_VERSION 7.1.12
 # https://www.virtualbox.org/download/hashes/$VBOX_VERSION/SHA256SUMS
-ENV VBOX_SHA256 486f90cbfe9ed4bf2b12d726ebf54a839758a237e967aa65fc2c92d90a963021
+ENV VBOX_SHA256 256883e2eabf7ab5c10fb3b6831c294942ce34bc615807f9d0cf6c3d2e882236
 # (VBoxGuestAdditions_X.Y.Z.iso SHA256, for verification)
 
 RUN wget -O /vbox.iso "https://download.virtualbox.org/virtualbox/$VBOX_VERSION/VBoxGuestAdditions_$VBOX_VERSION.iso"; \
@@ -351,7 +351,7 @@ RUN tcl-chroot depmod "$(< /usr/src/linux/include/config/kernel.release)"
 RUN echo 'cgroup2 /sys/fs/cgroup cgroup2 rw,nosuid,nodev,noexec,relatime,nsdelegate,memory_recursiveprot 0 0' \
 	>> etc/fstab
 
-ENV DOCKER_VERSION 27.4.1
+ENV DOCKER_VERSION 28.3.3
 
 # Get the Docker binaries with version that matches our 
 
