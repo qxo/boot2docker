@@ -21,10 +21,10 @@ index 1378b90..fea2aa8 100755
 -		sudo /bin/umount -d /mnt/test
 +		sudo rm -rf /mnt/test
  	fi
--	[ "$BOOTING" ] || rmdir /mnt/test
-+	[ "$BOOTING" ] || [ -d /mnt/test ] && rmdir /mnt/test
+-	[ "$BOOTING" ] || sudo rmdir /mnt/test
++	[ "$BOOTING" ] || [ -d /mnt/test ] && sudo rmdir /mnt/test
  }
-
+ 
  update_system() {
 @@ -161,8 +161,8 @@ recursive_scan_dep() {
  	echo -e "$@"|awk '

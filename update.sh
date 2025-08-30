@@ -1,9 +1,9 @@
-#!/usr/bin/env bash
+q#!/usr/bin/env bash
 set -Eeuo pipefail
 
 # TODO http://distro.ibiblio.org/tinycorelinux/latest-x86_64
-major='15.x'
-version='15.0' # TODO auto-detect latest
+major='16.x'
+version='16.0' # TODO auto-detect latest
 # 9.x doesn't seem to use ".../archive/X.Y.Z/..." in the same way as 8.x :(
 
 mirrors=(
@@ -12,7 +12,7 @@ mirrors=(
 )
 
 # https://www.kernel.org/
-kernelBase='6.6'
+kernelBase='6.12'
 
 # avoid issues with slow Git HTTP interactions (*cough* sourceforge *cough*)
 export GIT_HTTP_LOW_SPEED_LIMIT='100'
@@ -44,11 +44,12 @@ fetch() {
 arch='x86_64'
 rootfs='rootfs64.gz'
 
-rootfsMd5="$(
+qrootfsMd5="$(
 # 9.x doesn't seem to use ".../archive/X.Y.Z/..." in the same way as 8.x :(
 	fetch \
-		"$arch/archive/$version/distribution_files/$rootfs.md5.txt" \
-		"$arch/release/distribution_files/$rootfs.md5.txt"
+		"$arch/release/distribution_files/$rootfs.md5.txt" \
+		"$arch/archive/$version/distribution_files/$rootfs.md5.txt"
+
 )"
 rootfsMd5="${rootfsMd5%% *}"
 seds+=(
@@ -76,7 +77,7 @@ seds+=(
 )
 
 # PARALLELS_VERSION: https://github.com/boot2docker/boot2docker/pull/1332#issuecomment-420273330
-if [ "${xenVersionOn:-N}" = 'Y']; then
+if [ "${xenVersionOn:-N}" = 'Y' ]; then
 xenVersion="$(
 	git ls-remote --tags 'https://github.com/xenserver/xe-guest-utilities.git' \
 		| cut -d/ -f3 \
@@ -90,5 +91,4 @@ seds+=(
 	-e 's!^(ENV XEN_VERSION).*!\1 '"$xenVersion"'!'
 )
 fi
-set -x
 sed -ri "${seds[@]}" Dockerfile
