@@ -1,9 +1,9 @@
-q#!/usr/bin/env bash
+#!/usr/bin/env bash
 set -Eeuo pipefail
 
 # TODO http://distro.ibiblio.org/tinycorelinux/latest-x86_64
 major='16.x'
-version='16.0' # TODO auto-detect latest
+version='16.1' # TODO auto-detect latest
 # 9.x doesn't seem to use ".../archive/X.Y.Z/..." in the same way as 8.x :(
 
 mirrors=(
@@ -44,7 +44,7 @@ fetch() {
 arch='x86_64'
 rootfs='rootfs64.gz'
 
-qrootfsMd5="$(
+rootfsMd5="$(
 # 9.x doesn't seem to use ".../archive/X.Y.Z/..." in the same way as 8.x :(
 	fetch \
 		"$arch/release/distribution_files/$rootfs.md5.txt" \

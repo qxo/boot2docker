@@ -46,7 +46,7 @@ WORKDIR /rootfs
 # updated via "update.sh"
 ENV TCL_MIRRORS http://distro.ibiblio.org/tinycorelinux http://repo.tinycorelinux.net
 ENV TCL_MAJOR 16.x
-ENV TCL_VERSION 16.0
+ENV TCL_VERSION 16.1
 
 # http://distro.ibiblio.org/tinycorelinux/16.x/x86_64/release/distribution_files/rootfs64.gz.md5.txt
 # TODO updated via "update.sh"
@@ -181,7 +181,7 @@ RUN tcl-tce-load bash; \
 	[ "$PS1" = '\[\e[1;32m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ ' ]
 
 # updated via "update.sh"
-ENV LINUX_VERSION 6.12.44
+ENV LINUX_VERSION 6.12.47
 
 RUN wget -O /linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.xz"; \
 	wget -O /linux.tar.sign "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.sign"; \
