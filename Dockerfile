@@ -352,7 +352,7 @@ RUN tcl-chroot depmod "$(< /usr/src/linux/include/config/kernel.release)"
 RUN echo 'cgroup2 /sys/fs/cgroup cgroup2 rw,nosuid,nodev,noexec,relatime,nsdelegate,memory_recursiveprot 0 0' \
 	>> etc/fstab
 
-ENV DOCKER_VERSION 28.3.3
+ENV DOCKER_VERSION 29.1.3
 
 # Get the Docker binaries with version that matches our 
 
