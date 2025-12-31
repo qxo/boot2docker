@@ -44,13 +44,13 @@ RUN echo 'progress = dot:giga' >> ~/.wgetrc; \
 WORKDIR /rootfs
 
 # updated via "update.sh"
-ENV TCL_MIRRORS http://distro.ibiblio.org/tinycorelinux http://repo.tinycorelinux.net
+ENV TCL_MIRRORS https://distro.ibiblio.org/tinycorelinux https://repo.tinycorelinux.net
 ENV TCL_MAJOR 16.x
-ENV TCL_VERSION 16.1
+ENV TCL_VERSION 16.2
 
 # http://distro.ibiblio.org/tinycorelinux/16.x/x86_64/release/distribution_files/rootfs64.gz.md5.txt
 # TODO updated via "update.sh"
-ENV TCL_ROOTFS="rootfs64.gz" TCL_ROOTFS_MD5="19f608c47f2c91937fea80d88a42e43d"
+ENV TCL_ROOTFS="rootfs64.gz" TCL_ROOTFS_MD5="6248a15427895b2fe9bcd47670162b2e"
 
 COPY files/tce-load.patch files/udhcpc.patch /tcl-patches/
 
@@ -181,7 +181,7 @@ RUN tcl-tce-load bash; \
 	[ "$PS1" = '\[\e[1;32m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ ' ]
 
 # updated via "update.sh"
-ENV LINUX_VERSION 6.12.47
+ENV LINUX_VERSION 6.12.63
 
 RUN wget -O /linux.tar.xz "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.xz"; \
 	wget -O /linux.tar.sign "https://cdn.kernel.org/pub/linux/kernel/v${LINUX_VERSION%%.*}.x/linux-${LINUX_VERSION}.tar.sign"; \
@@ -261,7 +261,7 @@ RUN tcl-tce-load \
 		nano file \
 		xfsprogs \
 		haveged
-		#qemu-common
+#qemu-common
 
 # bash-completion puts auto-load in /usr/local/etc/profile.d instead of /etc/profile.d
 # (this one-liner is the same as the loop at the end of /etc/profile with an adjusted search path)
@@ -276,9 +276,9 @@ RUN make -C /usr/src/linux INSTALL_HDR_PATH=/usr/local headers_install
 
 # http://download.virtualbox.org/virtualbox/
 # updated via "update.sh"
-ENV VBOX_VERSION 7.1.12
+ENV VBOX_VERSION 7.2.4
 # https://www.virtualbox.org/download/hashes/$VBOX_VERSION/SHA256SUMS
-ENV VBOX_SHA256 256883e2eabf7ab5c10fb3b6831c294942ce34bc615807f9d0cf6c3d2e882236
+ENV VBOX_SHA256 66fa60b041fcda5d8b2ed22ba91bfafafaa3a5ff05c7d8ba01fbbe639669e153
 # (VBoxGuestAdditions_X.Y.Z.iso SHA256, for verification)
 
 RUN wget -O /vbox.iso "https://download.virtualbox.org/virtualbox/$VBOX_VERSION/VBoxGuestAdditions_$VBOX_VERSION.iso"; \
@@ -304,7 +304,7 @@ RUN make -C /usr/src/vbox/amd64/src/vboxguest -j "$(nproc)" \
 # TCL includes VMware's open-vm-tools 10.2.0.1608+ (no reason to compile that ourselves)
 RUN set -x;tcl-tce-load open-vm-tools; \
 	tcl-chroot vmhgfs-fuse --version; 
-	#tcl-chroot vmtoolsd --version
+#tcl-chroot vmtoolsd --version
 
 ENV PARALLELS_VERSION 18.2.0-53488
 

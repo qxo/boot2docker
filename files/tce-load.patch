@@ -7,7 +7,7 @@ diff --git a/usr/bin/tce-load b/usr/bin/tce-load
 index 1378b90..fea2aa8 100755
 --- a/usr/bin/tce-load
 +++ b/usr/bin/tce-load
-@@ -81,15 +81,15 @@ fetch_app() {
+@@ -82,15 +82,15 @@ fetch_app() {
  
  copyInstall() {
  	[ -d /mnt/test ] || sudo /bin/mkdir -p /mnt/test
@@ -16,7 +16,7 @@ index 1378b90..fea2aa8 100755
  	if [ "$?" == 0 ]; then
  		if [ "$(ls -A /mnt/test)" ]; then
  			yes "$FORCE" | sudo /bin/cp -ai /mnt/test/. / 2>/dev/null
- 			[ -n "`find /mnt/test/ -type d -name modules`" ] && MODULES=TRUE
+ 			[ -d /mnt/test/usr/local/lib/modules/$KERNELVER ] && MODULES=TRUE
  		fi
 -		sudo /bin/umount -d /mnt/test
 +		sudo rm -rf /mnt/test
